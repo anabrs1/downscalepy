@@ -1,0 +1,8 @@
+"""
+Constants used throughout the downscalepy package.
+"""
+
+PLCHOLD_T = "PLACEHOLDER_TIME"
+PLCHOLD_LU = "PLACEHOLDER_LU"
+PLCHOLD_K = "PLACEHOLDER_K"
+PLCHOLD_POPT = "PLACEHOLDER_POPTYPE"
