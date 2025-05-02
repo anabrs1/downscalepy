@@ -35,12 +35,14 @@ def mu_mnl(x: np.ndarray, mu: np.ndarray, areas: np.ndarray,
     mu_adj = mu.copy()
     
     for j in range(p):
-        mu_adj[:, j] = mu[:, j] * np.exp(x[j])
+        safe_exp = np.clip(x[j], -100, 100)  # Limit to reasonable range
+        mu_adj[:, j] = mu[:, j] * np.exp(safe_exp)
     
     if restrictions is not None:
         mu_adj = mu_adj * (1 - restrictions)
     
     row_sums = np.sum(mu_adj, axis=1, keepdims=True)
+    row_sums = np.maximum(row_sums, 1e-10)  # Ensure no zeros
     mu_adj = mu_adj / row_sums
     
     if cutoff > 0:
