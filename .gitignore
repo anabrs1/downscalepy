@@ -1,0 +1,41 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Generated files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# R files
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS specific files
+.DS_Store
+Thumbs.db
