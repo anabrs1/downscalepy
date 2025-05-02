@@ -2,6 +2,10 @@
 
 Python package for downscaling land-use and land-use change projections from models like GLOBIOM, CAPRI, and FABLE.
 
+## Original R Implementation
+
+This is a Python port of the [downscalr](https://github.com/tkrisztin/downscalr) R package.
+
 ## Installation
 
 ```bash
@@ -56,6 +60,4 @@ See the `examples` directory for detailed examples, including the Argentina land
 - `sim_luc()`: Simulate land-use change data
 - `sim_pop()`: Simulate population data
 
-## Original R Implementation
 
-This is a Python port of the [downscalr](https://github.com/tkrisztin/downscalr) R package.
