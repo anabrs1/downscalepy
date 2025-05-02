@@ -8,7 +8,7 @@ import numpy as np
 from typing import Dict, Any
 
 
-def load_argentina_data(use_real_data=True, **kwargs) -> Dict[str, Any]:
+def load_argentina_data(use_real_data=True) -> Dict[str, Any]:
     """
     Load example data for Argentina.
     
@@ -17,9 +17,7 @@ def load_argentina_data(use_real_data=True, **kwargs) -> Dict[str, Any]:
     use_real_data : bool, default=True
         Whether to use the real data converted from the R package.
         If False, synthetic data will be generated.
-    **kwargs : dict
-        Additional keyword arguments for backward compatibility.
-        
+    
     Returns
     -------
     Dict[str, Any]
@@ -28,19 +26,9 @@ def load_argentina_data(use_real_data=True, **kwargs) -> Dict[str, Any]:
         - argentina_df: Dictionary containing xmat, lu_levels, restrictions, and pop_data
         - argentina_FABLE: Target data from FABLE
     """
-    if 'use_real_data' in kwargs:
-        use_real_data = kwargs['use_real_data']
-        
-    try:
-        if use_real_data:
-            print("Loading real Argentina data...")
-            return load_real_argentina_data()
-        else:
-            print("Generating synthetic Argentina data...")
-            return generate_synthetic_argentina_data()
-    except Exception as e:
-        print(f"Error loading Argentina data: {e}")
-        print("Falling back to synthetic data...")
+    if use_real_data:
+        return load_real_argentina_data()
+    else:
         return generate_synthetic_argentina_data()
 
 
