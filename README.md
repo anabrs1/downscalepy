@@ -42,9 +42,30 @@ result = downscale(
 )
 ```
 
-## Example
+## Examples
 
-See the `examples` directory for detailed examples, including the Argentina land-use change example.
+### Argentina Example
+
+The package includes an example using real data from Argentina:
+
+```python
+from examples.argentina_example import run_example
+
+# Run with real data (default)
+result = run_example(use_real_data=True)
+
+# Or run with synthetic data
+result = run_example(use_real_data=False)
+```
+
+This example demonstrates downscaling land-use change projections in Argentina using the FABLE model. It includes:
+
+1. Loading real data converted from the original R package
+2. Estimating coefficients using multinomial logit regression
+3. Downscaling land-use change projections
+4. Visualizing the results
+
+See the `examples` directory for more detailed examples.
 
 ## Documentation
 
@@ -59,5 +80,3 @@ See the `examples` directory for detailed examples, including the Argentina land
 - `sim_lu()`: Simulate land-use data
 - `sim_luc()`: Simulate land-use change data
 - `sim_pop()`: Simulate population data
-
-
