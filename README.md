@@ -209,3 +209,47 @@ See the `examples` directory for more detailed examples.
 - `sim_lu()`: Simulate land-use data
 - `sim_luc()`: Simulate land-use change data
 - `sim_pop()`: Simulate population data
+
+### Visualization Functions
+
+- `luc_plot()`: Create visualizations of land-use change results
+- `save_luc_plot()`: Save land-use change visualizations to files
+
+## Visualization
+
+The package includes visualization functions to help analyze and present downscaling results:
+
+```python
+from downscalepy import downscale, luc_plot, save_luc_plot
+import rasterio
+
+# Run downscaling
+result = downscale(...)
+
+# Open a raster file with spatial information
+with rasterio.open('path/to/raster.tif') as raster:
+    # Create visualization for all land uses and times
+    plot_result = luc_plot(
+        res=result,
+        raster_file=raster,
+        figsize=(12, 10)
+    )
+    
+    # Save the visualization
+    save_luc_plot(
+        plot_result,
+        'output/visualization.png',
+        dpi=300
+    )
+    
+    # Create visualization for specific land use and time
+    specific_plot = luc_plot(
+        res=result,
+        raster_file=raster,
+        year='2010',
+        lu='Forest',
+        cmap='Blues'
+    )
+```
+
+See the `examples/visualization_example.py` script for a complete example of creating and saving visualizations.
