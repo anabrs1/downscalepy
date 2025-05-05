@@ -7,6 +7,7 @@ scipy>=1.7.0
 
 # Statistical modeling (BayesLogit, MASS)
 pymc>=4.0.0  # or pymc3>=3.11.0
+tqdm>=4.64.0  # Progress bar for MCMC sampling
 
 # Visualization (ggplot2, ggthemes)
 matplotlib>=3.4.0
