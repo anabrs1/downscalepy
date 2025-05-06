@@ -126,36 +126,55 @@ def load_real_argentina_data() -> Dict[str, Any]:
     return result
 
 
-def prepare_argentina_raster() -> Optional[str]:
+def prepare_argentina_raster() -> str:
     """
     Prepare the Argentina raster data for visualization.
     
     This function checks if the raster data is available in the converted directory.
     If not, it attempts to convert the original R raster data to GeoTIFF format.
+    If that fails, it creates a synthetic raster.
     
     Returns
     -------
-    Optional[str]
-        Path to the raster file, or None if the raster data could not be prepared.
+    str
+        Path to the raster file. This function will always return a valid path,
+        falling back to a synthetic raster if necessary.
     """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     converted_dir = os.path.join(script_dir, 'converted')
     original_dir = os.path.join(script_dir, 'original')
     
+    os.makedirs(converted_dir, exist_ok=True)
+    
     raster_tif_path = os.path.join(converted_dir, 'argentina_raster.tif')
     if os.path.exists(raster_tif_path):
+        print(f"Using existing converted raster at {raster_tif_path}")
         return raster_tif_path
     
+    synthetic_raster_path = os.path.join(converted_dir, 'argentina_raster_synthetic.tif')
+    if os.path.exists(synthetic_raster_path):
+        print(f"Using existing synthetic raster at {synthetic_raster_path}")
+        return synthetic_raster_path
+    
     r_raster_path = os.path.join(original_dir, 'argentina_raster.RData')
-    if not os.path.exists(r_raster_path):
+    if os.path.exists(r_raster_path):
+        print(f"Found R raster data at {r_raster_path}, but conversion not implemented.")
+        print("Creating synthetic raster instead.")
+        return create_synthetic_raster(converted_dir)
+    
+    try:
         downscalr_dir = os.path.abspath(os.path.join(script_dir, '../../../downscalr'))
         grd_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.grd')
         gri_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.gri')
         
         if os.path.exists(grd_path) and os.path.exists(gri_path):
-            os.makedirs(os.path.join(converted_dir, 'raster'), exist_ok=True)
-            converted_grd_path = os.path.join(converted_dir, 'raster', 'argentina_raster.grd')
-            converted_gri_path = os.path.join(converted_dir, 'raster', 'argentina_raster.gri')
+            print(f"Found GRD/GRI files at {grd_path} and {gri_path}")
+            
+            raster_dir = os.path.join(converted_dir, 'raster')
+            os.makedirs(raster_dir, exist_ok=True)
+            
+            converted_grd_path = os.path.join(raster_dir, 'argentina_raster.grd')
+            converted_gri_path = os.path.join(raster_dir, 'argentina_raster.gri')
             
             shutil.copy(grd_path, converted_grd_path)
             shutil.copy(gri_path, converted_gri_path)
@@ -190,6 +209,7 @@ def prepare_argentina_raster() -> Optional[str]:
                     data = data[:nrows * ncols].reshape((nrows, ncols))
                 else:
                     print(f"Warning: GRI data size ({len(data)}) doesn't match expected dimensions ({nrows}x{ncols})")
+                    print("Using random data instead.")
                     data = np.random.rand(nrows, ncols).astype(np.float32)
                 
                 transform = from_origin(xmin, ymin + nrows * cellsize, cellsize, cellsize)
@@ -207,37 +227,45 @@ def prepare_argentina_raster() -> Optional[str]:
                 ) as dst:
                     dst.write(data, 1)
                 
+                print(f"Successfully converted GRD/GRI to GeoTIFF at {raster_tif_path}")
                 return raster_tif_path
             
             except Exception as e:
                 print(f"Error converting GRD/GRI to GeoTIFF: {e}")
-                return create_synthetic_raster()
-        else:
-            print("Original raster data not found. Creating synthetic raster.")
-            return create_synthetic_raster()
-    
-    try:
-        print("R raster data found but conversion not implemented. Creating synthetic raster.")
-        return create_synthetic_raster()
+                print("Creating synthetic raster instead.")
     except Exception as e:
-        print(f"Error converting R raster data: {e}")
-        return create_synthetic_raster()
+        print(f"Error finding or processing original raster data: {e}")
+    
+    print("No original raster data found. Creating synthetic raster.")
+    return create_synthetic_raster(converted_dir)
 
 
-def create_synthetic_raster() -> str:
+def create_synthetic_raster(output_dir=None) -> str:
     """
     Create a synthetic raster file for visualization.
+    
+    Parameters
+    ----------
+    output_dir : str, optional
+        Directory to save the synthetic raster file. If None, the file will be saved
+        in the 'converted' directory within the data module.
     
     Returns
     -------
     str
         Path to the synthetic raster file.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    converted_dir = os.path.join(script_dir, 'converted')
-    os.makedirs(converted_dir, exist_ok=True)
+    if output_dir is None:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(script_dir, 'converted')
     
-    raster_tif_path = os.path.join(converted_dir, 'argentina_raster_synthetic.tif')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    raster_tif_path = os.path.join(output_dir, 'argentina_raster_synthetic.tif')
+    
+    if os.path.exists(raster_tif_path):
+        print(f"Using existing synthetic raster at {raster_tif_path}")
+        return raster_tif_path
     
     height, width = 10, 10
     data = np.zeros((height, width), dtype=np.float32)
@@ -251,21 +279,25 @@ def create_synthetic_raster() -> str:
         west=0, south=0, east=width, north=height, width=width, height=height
     )
     
-    with rasterio.open(
-        raster_tif_path,
-        'w',
-        driver='GTiff',
-        height=height,
-        width=width,
-        count=1,
-        dtype=data.dtype,
-        crs='+proj=latlong',
-        transform=transform,
-    ) as dst:
-        dst.write(data, 1)
-    
-    print(f"Created synthetic raster at {raster_tif_path}")
-    return raster_tif_path
+    try:
+        with rasterio.open(
+            raster_tif_path,
+            'w',
+            driver='GTiff',
+            height=height,
+            width=width,
+            count=1,
+            dtype=data.dtype,
+            crs='+proj=latlong',
+            transform=transform,
+        ) as dst:
+            dst.write(data, 1)
+        
+        print(f"Created synthetic raster at {raster_tif_path}")
+        return raster_tif_path
+    except Exception as e:
+        print(f"Error creating synthetic raster: {e}")
+        return None
 
 
 def generate_synthetic_argentina_data() -> Dict[str, Any]:

@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import rasterio
+import seaborn as sns
 from downscalepy import downscale, mnlogit, luc_plot, save_luc_plot
 from downscalepy.data.load_data import load_argentina_data
 
@@ -189,11 +190,17 @@ def plot_results(result, start_areas, raster_path=None, output_dir=None):
         Path to the raster file for visualization.
     output_dir : str, optional
         Directory to save the output plots.
+    
+    Returns
+    -------
+    dict
+        Dictionary containing paths to the generated plots.
     """
     if output_dir is None:
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output')
     os.makedirs(output_dir, exist_ok=True)
     
+    plot_paths = {}
     out_res = result['out_res']
     
     start_totals = start_areas.groupby('lu.from')['value'].sum().reset_index()
@@ -224,57 +231,140 @@ def plot_results(result, start_areas, raster_path=None, output_dir=None):
     plt.close()
     
     print(f"Bar chart saved to '{bar_chart_path}'")
+    plot_paths['bar_chart'] = bar_chart_path
     
-    if raster_path:
-        print(f"Creating raster visualizations using '{raster_path}'...")
-        
+    if not raster_path:
+        print("No raster path provided. Attempting to create a synthetic raster...")
         try:
-            with rasterio.open(raster_path) as raster:
-                all_plot = luc_plot(
-                    res=result,
-                    raster_file=raster,
-                    figsize=(12, 10)
-                )
-                
-                all_plot_path = os.path.join(output_dir, 'argentina_all_landuses_times.png')
-                save_luc_plot(all_plot, all_plot_path)
-                
-                first_time = out_res['times'].unique()[0]
-                cropland_to_forest = out_res[
-                    (out_res['times'] == first_time) & 
-                    (out_res['lu.from'] == 'Cropland') & 
-                    (out_res['lu.to'] == 'Forest')
-                ]
-                
-                if not cropland_to_forest.empty:
-                    cropland_plot = luc_plot(
-                        res=result,
-                        raster_file=raster,
-                        year=first_time,
-                        lu='Forest',
-                        cmap='Greens',
-                        figsize=(8, 6)
-                    )
-                    
-                    cropland_plot_path = os.path.join(output_dir, f'argentina_cropland_to_forest_{first_time}.png')
-                    save_luc_plot(cropland_plot, cropland_plot_path)
-                
-                time_plot = luc_plot(
+            from downscalepy.data.load_data import create_synthetic_raster
+            raster_path = create_synthetic_raster(output_dir)
+            if not raster_path:
+                print("Failed to create synthetic raster. Using alternative visualizations.")
+                return create_alternative_visualizations(result, output_dir, plot_paths)
+        except Exception as e:
+            print(f"Error creating synthetic raster: {e}")
+            print("Using alternative visualizations.")
+            return create_alternative_visualizations(result, output_dir, plot_paths)
+    
+    print(f"Creating raster visualizations using '{raster_path}'...")
+    
+    try:
+        with rasterio.open(raster_path) as raster:
+            all_plot = luc_plot(
+                res=result,
+                raster_file=raster,
+                figsize=(12, 10)
+            )
+            
+            all_plot_path = os.path.join(output_dir, 'argentina_all_landuses_times.png')
+            save_luc_plot(all_plot, all_plot_path)
+            plot_paths['all_landuses_times'] = all_plot_path
+            
+            first_time = out_res['times'].unique()[0]
+            cropland_to_forest = out_res[
+                (out_res['times'] == first_time) & 
+                (out_res['lu.from'] == 'Cropland') & 
+                (out_res['lu.to'] == 'Forest')
+            ]
+            
+            if not cropland_to_forest.empty:
+                cropland_plot = luc_plot(
                     res=result,
                     raster_file=raster,
                     year=first_time,
-                    cmap='viridis',
-                    figsize=(12, 6)
+                    lu='Forest',
+                    cmap='Greens',
+                    figsize=(8, 6)
                 )
                 
-                time_plot_path = os.path.join(output_dir, f'argentina_all_landuses_{first_time}.png')
-                save_luc_plot(time_plot, time_plot_path)
-                
-                print(f"Raster visualizations saved to '{output_dir}'")
-        except Exception as e:
-            print(f"Error creating raster visualizations: {e}")
-    else:
-        print("No raster path provided. Skipping raster visualizations.")
+                cropland_plot_path = os.path.join(output_dir, f'argentina_cropland_to_forest_{first_time}.png')
+                save_luc_plot(cropland_plot, cropland_plot_path)
+                plot_paths['cropland_to_forest'] = cropland_plot_path
+            
+            time_plot = luc_plot(
+                res=result,
+                raster_file=raster,
+                year=first_time,
+                cmap='viridis',
+                figsize=(12, 6)
+            )
+            
+            time_plot_path = os.path.join(output_dir, f'argentina_all_landuses_{first_time}.png')
+            save_luc_plot(time_plot, time_plot_path)
+            plot_paths['all_landuses_time'] = time_plot_path
+            
+            print(f"Raster visualizations saved to '{output_dir}'")
+            return plot_paths
+    except Exception as e:
+        print(f"Error creating raster visualizations: {e}")
+        print("Using alternative visualizations.")
+        return create_alternative_visualizations(result, output_dir, plot_paths)
+
+
+def create_alternative_visualizations(result, output_dir, plot_paths=None):
+    """
+    Create alternative visualizations when raster data is not available.
+    
+    Parameters
+    ----------
+    result : dict
+        The result of the downscaling process.
+    output_dir : str
+        Directory to save the output plots.
+    plot_paths : dict, optional
+        Dictionary containing paths to already generated plots.
+    
+    Returns
+    -------
+    dict
+        Dictionary containing paths to the generated plots.
+    """
+    if plot_paths is None:
+        plot_paths = {}
+    
+    out_res = result['out_res']
+    
+    plt.figure(figsize=(12, 10))
+    
+    transition_matrix = out_res.groupby(['lu.from', 'lu.to'])['value'].sum().reset_index()
+    transition_pivot = transition_matrix.pivot(index='lu.from', columns='lu.to', values='value')
+    
+    transition_pivot = transition_pivot.fillna(0)
+    
+    sns.heatmap(transition_pivot, annot=True, cmap='YlGnBu', fmt='.1f')
+    plt.title('Land-Use Transition Matrix')
+    plt.tight_layout()
+    
+    heatmap_path = os.path.join(output_dir, 'argentina_transition_heatmap.png')
+    plt.savefig(heatmap_path)
+    plt.close()
+    
+    print(f"Transition heatmap saved to '{heatmap_path}'")
+    plot_paths['transition_heatmap'] = heatmap_path
+    
+    plt.figure(figsize=(12, 6))
+    
+    time_series = out_res.groupby(['times', 'lu.to'])['value'].sum().reset_index()
+    
+    for lu in time_series['lu.to'].unique():
+        lu_data = time_series[time_series['lu.to'] == lu]
+        plt.plot(lu_data['times'], lu_data['value'], marker='o', label=lu)
+    
+    plt.xlabel('Time')
+    plt.ylabel('Total Area')
+    plt.title('Land-Use Change Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    
+    time_series_path = os.path.join(output_dir, 'argentina_time_series.png')
+    plt.savefig(time_series_path)
+    plt.close()
+    
+    print(f"Time series plot saved to '{time_series_path}'")
+    plot_paths['time_series'] = time_series_path
+    
+    return plot_paths
 
 
 if __name__ == "__main__":
