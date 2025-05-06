@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from downscalepy import downscale, mnlogit
+import rasterio
+from downscalepy import downscale, mnlogit, luc_plot, save_luc_plot
 from downscalepy.data.load_data import load_argentina_data
 
 
@@ -157,14 +158,24 @@ def run_example(use_real_data=True, debug=True):
     print("Downscaling complete!")
     if 'out_res' in result:
         print(f"Results shape: {result['out_res'].shape}")
-        plot_results(result, argentina_df['lu_levels'])
+        
+        raster_path = data.get('argentina_raster')
+        if raster_path:
+            print(f"Using raster data from: {raster_path}")
+        else:
+            print("No raster data available for visualization.")
+        
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        plot_results(result, argentina_df['lu_levels'], raster_path, output_dir)
     else:
         print("Warning: No results returned from downscaling.")
     
     return result
 
 
-def plot_results(result, start_areas):
+def plot_results(result, start_areas, raster_path=None, output_dir=None):
     """
     Plot the results of the downscaling process.
     
@@ -174,7 +185,15 @@ def plot_results(result, start_areas):
         The result of the downscaling process.
     start_areas : pd.DataFrame
         The starting areas.
+    raster_path : str, optional
+        Path to the raster file for visualization.
+    output_dir : str, optional
+        Directory to save the output plots.
     """
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output')
+    os.makedirs(output_dir, exist_ok=True)
+    
     out_res = result['out_res']
     
     start_totals = start_areas.groupby('lu.from')['value'].sum().reset_index()
@@ -200,10 +219,62 @@ def plot_results(result, start_areas):
     plt.legend()
     
     plt.tight_layout()
-    plt.savefig('argentina_example_results.png')
+    bar_chart_path = os.path.join(output_dir, 'argentina_bar_chart.png')
+    plt.savefig(bar_chart_path)
     plt.close()
     
-    print("Results plot saved to 'argentina_example_results.png'")
+    print(f"Bar chart saved to '{bar_chart_path}'")
+    
+    if raster_path:
+        print(f"Creating raster visualizations using '{raster_path}'...")
+        
+        try:
+            with rasterio.open(raster_path) as raster:
+                all_plot = luc_plot(
+                    res=result,
+                    raster_file=raster,
+                    figsize=(12, 10)
+                )
+                
+                all_plot_path = os.path.join(output_dir, 'argentina_all_landuses_times.png')
+                save_luc_plot(all_plot, all_plot_path)
+                
+                first_time = out_res['times'].unique()[0]
+                cropland_to_forest = out_res[
+                    (out_res['times'] == first_time) & 
+                    (out_res['lu.from'] == 'Cropland') & 
+                    (out_res['lu.to'] == 'Forest')
+                ]
+                
+                if not cropland_to_forest.empty:
+                    cropland_plot = luc_plot(
+                        res=result,
+                        raster_file=raster,
+                        year=first_time,
+                        lu='Forest',
+                        cmap='Greens',
+                        figsize=(8, 6)
+                    )
+                    
+                    cropland_plot_path = os.path.join(output_dir, f'argentina_cropland_to_forest_{first_time}.png')
+                    save_luc_plot(cropland_plot, cropland_plot_path)
+                
+                time_plot = luc_plot(
+                    res=result,
+                    raster_file=raster,
+                    year=first_time,
+                    cmap='viridis',
+                    figsize=(12, 6)
+                )
+                
+                time_plot_path = os.path.join(output_dir, f'argentina_all_landuses_{first_time}.png')
+                save_luc_plot(time_plot, time_plot_path)
+                
+                print(f"Raster visualizations saved to '{output_dir}'")
+        except Exception as e:
+            print(f"Error creating raster visualizations: {e}")
+    else:
+        print("No raster path provided. Skipping raster visualizations.")
 
 
 if __name__ == "__main__":
