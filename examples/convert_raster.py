@@ -16,14 +16,14 @@ def log(message):
 def create_r_script(output_path):
     """Create a temporary R script to convert the RData file."""
     r_script = """
-    if (!require("terra")) {
+    if (!require("terra")) {{
         install.packages("terra", repos="https://cloud.r-project.org")
         library(terra)
-    }
-    if (!require("raster")) {
+    }}
+    if (!require("raster")) {{
         install.packages("raster", repos="https://cloud.r-project.org")
         library(raster)
-    }
+    }}
 
     data_dir <- "/storage/lopesas/downscalepy/downscalepy/data"
     rdata_file <- file.path(data_dir, "argentina_raster.RData")
