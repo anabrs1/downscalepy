@@ -114,215 +114,112 @@ def load_real_argentina_data() -> Dict[str, Any]:
     """
     import sys
     
-    csv_files = [
-        'argentina_luc.csv',
-        'argentina_FABLE.csv',
-        'argentina_df_xmat.csv',
-        'argentina_df_lu_levels.csv',
-        'argentina_df_restrictions.csv',
-        'argentina_df_pop_data.csv'
-    ]
+    data_dir = '/storage/lopesas/downscalepy/downscalepy/data/converted'
     
-    user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
-    sys.stderr.write(f"EXTREME DEBUG: CHECKING PRIMARY DATA PATH: {user_storage_path}\n")
+    sys.stderr.write("\n" + "!"*80 + "\n")
+    sys.stderr.write("DIRECT LOADING: Using exact path that worked in test script\n")
+    sys.stderr.write(f"DIRECT LOADING: Loading files from {data_dir}\n")
+    sys.stderr.write("!"*80 + "\n\n")
     sys.stderr.flush()
-    
-    import sys
-    
-    if not os.path.exists(user_storage_path):
-        sys.stderr.write(f"EXTREME DEBUG ERROR: Primary data directory does not exist: {user_storage_path}\n")
-        sys.stderr.write(f"EXTREME DEBUG: Checking parent directory: {os.path.dirname(user_storage_path)}\n")
-        if os.path.exists(os.path.dirname(user_storage_path)):
-            sys.stderr.write(f"EXTREME DEBUG: Parent directory exists. Contents: {os.listdir(os.path.dirname(user_storage_path))}\n")
-        else:
-            sys.stderr.write(f"EXTREME DEBUG: Parent directory does not exist\n")
-    else:
-        sys.stderr.write(f"EXTREME DEBUG SUCCESS: Primary data directory exists: {user_storage_path}\n")
-        sys.stderr.write(f"EXTREME DEBUG: Directory contents: {os.listdir(user_storage_path)}\n")
-        
-        all_files_exist = True
-        for csv_file in csv_files:
-            file_path = os.path.join(user_storage_path, csv_file)
-            if os.path.exists(file_path):
-                sys.stderr.write(f"EXTREME DEBUG:   ✓ Found file: {csv_file} (size: {os.path.getsize(file_path)} bytes)\n")
-            else:
-                sys.stderr.write(f"EXTREME DEBUG:   ✗ Missing file: {csv_file}\n")
-                all_files_exist = False
-        
-        if all_files_exist:
-            sys.stderr.write(f"EXTREME DEBUG SUCCESS: All required data files found in: {user_storage_path}\n")
-            data_dir = user_storage_path
-        else:
-            sys.stderr.write(f"EXTREME DEBUG WARNING: Some files are missing from primary data path\n")
-            all_csv_files = [f for f in os.listdir(user_storage_path) if f.endswith('.csv')]
-            sys.stderr.write(f"EXTREME DEBUG: Available CSV files: {all_csv_files}\n")
-            
-            missing_files = []
-            for required_file in csv_files:
-                found = False
-                for available_file in all_csv_files:
-                    if required_file.lower() == available_file.lower():
-                        sys.stderr.write(f"EXTREME DEBUG:   ✓ Found case-insensitive match: {required_file} -> {available_file}\n")
-                        found = True
-                        break
-                if not found:
-                    missing_files.append(required_file)
-            
-            if not missing_files:
-                sys.stderr.write(f"EXTREME DEBUG SUCCESS: All required files found with case-insensitive matching\n")
-                data_dir = user_storage_path
-            else:
-                sys.stderr.write(f"EXTREME DEBUG ERROR: Still missing files after case-insensitive matching: {missing_files}\n")
-        
-        sys.stderr.flush()
-    
-    import sys
-    
-    if 'data_dir' not in locals():
-        sys.stderr.write("EXTREME DEBUG: Trying alternative data paths...\n")
-        
-        alternative_paths = [
-            '/storage/lopesas/downscalepy/data/converted',
-            '/storage/lopesas/downscalepy/converted',
-            '/storage/lopesas/downscalepy/downscalepy/data',
-            '/storage/lopesas/downscalepy',
-            '/storage/lopesas/downscalepy/downscalepy',
-            '/storage/lopesas/downscalepy/data',
-            '/storage/lopesas'
-        ]
-        
-        for alt_path in alternative_paths:
-            sys.stderr.write(f"EXTREME DEBUG: Checking alternative path: {alt_path}\n")
-            if os.path.exists(alt_path):
-                sys.stderr.write(f"EXTREME DEBUG:   Directory exists. Contents: {os.listdir(alt_path)}\n")
-                csv_files_in_dir = [f for f in os.listdir(alt_path) if f.endswith('.csv')]
-                if csv_files_in_dir:
-                    sys.stderr.write(f"EXTREME DEBUG:   Found CSV files: {csv_files_in_dir}\n")
-                    missing = [f for f in csv_files if not os.path.exists(os.path.join(alt_path, f))]
-                    if not missing:
-                        data_dir = alt_path
-                        sys.stderr.write(f"EXTREME DEBUG SUCCESS: Found all data files in alternative path: {data_dir}\n")
-                        
-                        # Try to copy files to the correct location
-                        try:
-                            os.makedirs(user_storage_path, exist_ok=True)
-                            for csv_file in csv_files:
-                                src = os.path.join(alt_path, csv_file)
-                                dst = os.path.join(user_storage_path, csv_file)
-                                if not os.path.exists(dst):
-                                    shutil.copy(src, dst)
-                            sys.stderr.write(f"EXTREME DEBUG SUCCESS: Copied CSV files to correct location\n")
-                        except Exception as e:
-                            sys.stderr.write(f"EXTREME DEBUG ERROR: Could not copy files: {e}\n")
-                        
-                        break
-                    else:
-                        sys.stderr.write(f"EXTREME DEBUG:   Missing {len(missing)} files: {missing}\n")
-            else:
-                sys.stderr.write(f"EXTREME DEBUG:   Directory does not exist\n")
-        
-        sys.stderr.flush()
-        
-        if 'data_dir' not in locals():
-            specific_path = 'downscalepy/data/converted'
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            possible_dirs = [
-                os.path.join(os.getcwd(), specific_path),
-                os.path.join(script_dir, 'converted'),
-                os.path.join(os.getcwd(), 'data', 'converted'),
-                os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
-                os.path.join(os.getcwd(), 'converted'),
-                os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
-                os.path.join(script_dir, '..', '..', 'data', 'converted'),
-            ]
-            
-            if 'DOWNSCALEPY_DATA_DIR' in os.environ:
-                possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
-            
-            for directory in possible_dirs:
-                print(f"Checking standard path: {directory}")
-                if os.path.exists(directory):
-                    print(f"  Directory exists. Contents: {os.listdir(directory)}")
-                    missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
-                    if not missing:
-                        data_dir = directory
-                        print(f"SUCCESS: Found all data files in: {data_dir}")
-                        break
-                    else:
-                        print(f"  Missing {len(missing)} files: {missing}")
-                else:
-                    print(f"  Directory does not exist")
-    
-    import sys
-    
-    if 'data_dir' not in locals():
-        sys.stderr.write("EXTREME DEBUG: Searching for CSV files in any subdirectory of /storage/lopesas/downscalepy...\n")
-        if os.path.exists('/storage/lopesas/downscalepy'):
-            for root, dirs, files in os.walk('/storage/lopesas/downscalepy'):
-                csv_files_found = [f for f in files if f.endswith('.csv')]
-                if csv_files_found:
-                    sys.stderr.write(f"EXTREME DEBUG: Found CSV files in {root}: {csv_files_found}\n")
-                    
-                    for required_file in csv_files:
-                        for found_file in csv_files_found:
-                            if required_file.lower() == found_file.lower():
-                                sys.stderr.write(f"EXTREME DEBUG: Found required file {required_file} at {os.path.join(root, found_file)}\n")
-        
-        sys.stderr.write("\n" + "!"*80 + "\n")
-        sys.stderr.write("EXTREME DEBUG ERROR: Could not find data files in any of the searched directories.\n")
-        sys.stderr.write(f"EXTREME DEBUG ERROR: Missing data files: {csv_files}\n")
-        sys.stderr.write("EXTREME DEBUG ERROR: Please ensure data files are in '/storage/lopesas/downscalepy/downscalepy/data/converted' directory.\n")
-        sys.stderr.write("EXTREME DEBUG ERROR: Falling back to synthetic data.\n")
-        sys.stderr.write("!"*80 + "\n\n")
-        sys.stderr.flush()
-        
-        return generate_synthetic_argentina_data()
-    
-    original_dir = os.path.join(os.path.dirname(data_dir), 'original')
     
     result = {}
     
+    # Load argentina_luc directly
     try:
-        argentina_luc = pd.read_csv(os.path.join(data_dir, 'argentina_luc.csv'))
+        file_path = os.path.join(data_dir, 'argentina_luc.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        argentina_luc = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_luc.csv, shape: {argentina_luc.shape}\n")
         result['argentina_luc'] = argentina_luc
     except Exception as e:
-        print(f"Error loading argentina_luc: {e}")
+        sys.stderr.write(f"ERROR: Failed to load argentina_luc.csv: {e}\n")
+        sys.stderr.write("Falling back to synthetic data for argentina_luc\n")
         synthetic_data = generate_synthetic_argentina_data()
         result['argentina_luc'] = synthetic_data['argentina_luc']
     
-    # Load argentina_FABLE
+    # Load argentina_FABLE directly
     try:
-        argentina_FABLE = pd.read_csv(os.path.join(data_dir, 'argentina_FABLE.csv'))
+        file_path = os.path.join(data_dir, 'argentina_FABLE.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        argentina_FABLE = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_FABLE.csv, shape: {argentina_FABLE.shape}\n")
         result['argentina_FABLE'] = argentina_FABLE
     except Exception as e:
-        print(f"Error loading argentina_FABLE: {e}")
+        sys.stderr.write(f"ERROR: Failed to load argentina_FABLE.csv: {e}\n")
+        sys.stderr.write("Falling back to synthetic data for argentina_FABLE\n")
         synthetic_data = generate_synthetic_argentina_data()
         result['argentina_FABLE'] = synthetic_data['argentina_FABLE']
     
     try:
-        xmat = pd.read_csv(os.path.join(data_dir, 'argentina_df_xmat.csv'))
-        lu_levels = pd.read_csv(os.path.join(data_dir, 'argentina_df_lu_levels.csv'))
-        restrictions = pd.read_csv(os.path.join(data_dir, 'argentina_df_restrictions.csv'))
-        pop_data = pd.read_csv(os.path.join(data_dir, 'argentina_df_pop_data.csv'))
+        file_path = os.path.join(data_dir, 'argentina_df_xmat.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        xmat = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_df_xmat.csv, shape: {xmat.shape}\n")
         
+        file_path = os.path.join(data_dir, 'argentina_df_lu_levels.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        lu_levels = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_df_lu_levels.csv, shape: {lu_levels.shape}\n")
+        
+        file_path = os.path.join(data_dir, 'argentina_df_restrictions.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        restrictions = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_df_restrictions.csv, shape: {restrictions.shape}\n")
+        
+        # Load pop_data
+        file_path = os.path.join(data_dir, 'argentina_df_pop_data.csv')
+        sys.stderr.write(f"DIRECT LOADING: Loading {file_path}\n")
+        pop_data = pd.read_csv(file_path)
+        sys.stderr.write(f"SUCCESS: Loaded argentina_df_pop_data.csv, shape: {pop_data.shape}\n")
+        
+        # Create argentina_df dictionary
         result['argentina_df'] = {
             'xmat': xmat,
             'lu_levels': lu_levels,
             'restrictions': restrictions,
             'pop_data': pop_data
         }
+        sys.stderr.write("SUCCESS: Created argentina_df dictionary with all components\n")
     except Exception as e:
-        print(f"Error loading argentina_df components: {e}")
+        sys.stderr.write(f"ERROR: Failed to load argentina_df components: {e}\n")
+        sys.stderr.write("Falling back to synthetic data for argentina_df\n")
         synthetic_data = generate_synthetic_argentina_data()
         result['argentina_df'] = synthetic_data['argentina_df']
     
-    raster_path = prepare_argentina_raster()
-    if raster_path:
-        result['argentina_raster'] = raster_path
-    else:
-        print("Error loading argentina_raster. Using synthetic raster.")
+    try:
+        raster_path = os.path.join(data_dir, 'argentina_raster.tif')
+        sys.stderr.write(f"DIRECT LOADING: Checking for raster at {raster_path}\n")
+        
+        if os.path.exists(raster_path):
+            sys.stderr.write(f"SUCCESS: Found raster file at {raster_path}\n")
+            result['argentina_raster'] = raster_path
+        else:
+            sys.stderr.write(f"WARNING: Raster file not found at {raster_path}\n")
+            sys.stderr.write("Trying prepare_argentina_raster() function\n")
+            raster_path = prepare_argentina_raster()
+            if raster_path:
+                result['argentina_raster'] = raster_path
+            else:
+                sys.stderr.write("ERROR: Failed to prepare raster. Using synthetic raster.\n")
+                result['argentina_raster'] = create_synthetic_raster()
+    except Exception as e:
+        sys.stderr.write(f"ERROR: Exception while handling raster: {e}\n")
+        sys.stderr.write("Using synthetic raster\n")
         result['argentina_raster'] = create_synthetic_raster()
+    
+    sys.stderr.write("\n" + "!"*80 + "\n")
+    sys.stderr.write("DIRECT LOADING SUMMARY:\n")
+    for key in result:
+        if key == 'argentina_df':
+            sys.stderr.write(f"- {key}: Dictionary with {len(result[key])} components\n")
+            for subkey, value in result[key].items():
+                sys.stderr.write(f"  - {subkey}: Shape {value.shape}\n")
+        elif key == 'argentina_raster':
+            sys.stderr.write(f"- {key}: {result[key]}\n")
+        else:
+            sys.stderr.write(f"- {key}: Shape {result[key].shape}\n")
+    sys.stderr.write("!"*80 + "\n\n")
+    sys.stderr.flush()
     
     return result
 
