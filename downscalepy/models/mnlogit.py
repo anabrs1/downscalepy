@@ -14,7 +14,7 @@ import tqdm
 
 def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None, 
            niter: int = 1000, nburn: int = 500, A0: float = 1e4,
-           calc_marginal_fx: bool = False) -> Dict[str, Any]:
+           calc_marginal_fx: bool = False, jitter: float = 0.0) -> Dict[str, Any]:
     """
     MCMC estimation of a multinomial logit model following Polson et al. (2013).
 
@@ -35,6 +35,8 @@ def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None,
         Prior variance scalar for all slope coefficients
     calc_marginal_fx : bool, default=False
         Should marginal effects be calculated?
+    jitter : float, default=0.0
+        Small value added to diagonal elements of covariance matrices for numerical stability
 
     Returns
     -------
@@ -94,10 +96,21 @@ def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None,
             
             curr_om[:, j] = rpg_approx(n, nn[:, j], eta_j)
             
-            V = np.linalg.inv(beta_prior_var_inv + X.T @ (X * curr_om[:, j][:, np.newaxis]))
-            b = V @ (beta_prior_var_inv @ beta_prior_mean[:, j] + 
-                     X.T @ (kappa[:, j] + c_j * curr_om[:, j]))
-            curr_beta[:, j] = multivariate_normal.rvs(mean=b, cov=V)
+            cov_matrix = beta_prior_var_inv + X.T @ (X * curr_om[:, j][:, np.newaxis])
+            if jitter > 0:
+                cov_matrix = cov_matrix + np.eye(k) * jitter
+                
+            try:
+                V = np.linalg.inv(cov_matrix)
+                b = V @ (beta_prior_var_inv @ beta_prior_mean[:, j] + 
+                         X.T @ (kappa[:, j] + c_j * curr_om[:, j]))
+                curr_beta[:, j] = multivariate_normal.rvs(mean=b, cov=V)
+            except np.linalg.LinAlgError:
+                cov_matrix = cov_matrix + np.eye(k) * max(jitter, 1e-6) * 10
+                V = np.linalg.inv(cov_matrix)
+                b = V @ (beta_prior_var_inv @ beta_prior_mean[:, j] + 
+                         X.T @ (kappa[:, j] + c_j * curr_om[:, j]))
+                curr_beta[:, j] = multivariate_normal.rvs(mean=b, cov=V)
         
         if iter >= ndiscard:
             s = iter - ndiscard
