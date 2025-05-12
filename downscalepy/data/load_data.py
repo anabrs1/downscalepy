@@ -114,10 +114,32 @@ def load_real_argentina_data() -> Dict[str, Any]:
     """
     import sys
     
-    data_dir = '/storage/lopesas/downscalepy/downscalepy/data/converted'
+    possible_data_dirs = [
+        '/storage/lopesas/downscalepy/downscalepy/data/converted',  # Original path
+        'downscalepy/data/converted',                              # Local relative path
+        os.path.join(os.getcwd(), 'downscalepy/data/converted'),   # Absolute path based on cwd
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'converted')  # Path relative to this file
+    ]
+    
+    data_dir = None
+    for dir_path in possible_data_dirs:
+        if os.path.exists(dir_path):
+            data_dir = dir_path
+            break
+    
+    if data_dir is None:
+        sys.stderr.write("\n" + "!"*80 + "\n")
+        sys.stderr.write("ERROR: Could not find any valid data directory\n")
+        sys.stderr.write("Tried the following paths:\n")
+        for dir_path in possible_data_dirs:
+            sys.stderr.write(f"  - {dir_path}\n")
+        sys.stderr.write("Falling back to synthetic data\n")
+        sys.stderr.write("!"*80 + "\n\n")
+        sys.stderr.flush()
+        return generate_synthetic_argentina_data()
     
     sys.stderr.write("\n" + "!"*80 + "\n")
-    sys.stderr.write("DIRECT LOADING: Using exact path that worked in test script\n")
+    sys.stderr.write("DIRECT LOADING: Found valid data directory\n")
     sys.stderr.write(f"DIRECT LOADING: Loading files from {data_dir}\n")
     sys.stderr.write("!"*80 + "\n\n")
     sys.stderr.flush()
