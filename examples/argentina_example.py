@@ -31,6 +31,8 @@ def run_example(use_real_data=True, debug=True):
     dict
         The result of the downscaling process.
     """
+    example_LU_from = "Cropland"
+    
     print(f"Loading Argentina data (use_real_data={use_real_data})...")
     data = load_argentina_data(use_real_data=use_real_data)
     
@@ -131,7 +133,7 @@ def run_example(use_real_data=True, debug=True):
     ns_list = argentina_df['lu_levels']['ns'].unique()
     priors = pd.DataFrame({
         'ns': ns_list,
-        'lu.from': 'Cropland',
+        'lu.from': example_LU_from,
         'lu.to': 'Forest',
         'value': np.random.uniform(0, 1, size=len(ns_list))
     })
@@ -143,7 +145,7 @@ def run_example(use_real_data=True, debug=True):
         targets_2010 = argentina_FABLE[argentina_FABLE['times'] == first_time]
     
     filtered_betas = betas_df[
-        ~((betas_df['lu.from'] == 'Cropland') & (betas_df['lu.to'] == 'Forest'))
+        ~((betas_df['lu.from'] == example_LU_from) & (betas_df['lu.to'] == 'Forest'))
     ]
     
     print("\nRunning downscaling...")
@@ -168,14 +170,14 @@ def run_example(use_real_data=True, debug=True):
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output')
         os.makedirs(output_dir, exist_ok=True)
         
-        plot_results(result, argentina_df['lu_levels'], raster_path, output_dir)
+        plot_results(result, argentina_df['lu_levels'], raster_path, output_dir, example_LU_from)
     else:
         print("Warning: No results returned from downscaling.")
     
     return result
 
 
-def plot_results(result, start_areas, raster_path=None, output_dir=None):
+def plot_results(result, start_areas, raster_path=None, output_dir=None, example_LU_from="Cropland"):
     """
     Plot the results of the downscaling process.
     
@@ -189,6 +191,8 @@ def plot_results(result, start_areas, raster_path=None, output_dir=None):
         Path to the raster file for visualization.
     output_dir : str, optional
         Directory to save the output plots.
+    example_LU_from : str, default="Cropland"
+        The land use change origin class used in the example, matching the R example.
     """
     if output_dir is None:
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output')
@@ -242,7 +246,7 @@ def plot_results(result, start_areas, raster_path=None, output_dir=None):
                 first_time = out_res['times'].unique()[0]
                 cropland_to_forest = out_res[
                     (out_res['times'] == first_time) & 
-                    (out_res['lu.from'] == 'Cropland') & 
+                    (out_res['lu.from'] == example_LU_from) & 
                     (out_res['lu.to'] == 'Forest')
                 ]
                 
