@@ -175,7 +175,7 @@ def run_example():
     
     lu_from = 'Cropland'
     
-    mask = (argentina_luc['lu.from'] == lu_from) & (argentina_luc['Ts'] == '2000')
+    mask = (argentina_luc['lu.from'] == lu_from) & (argentina_luc['Ts'] == 2000)
     
     if mask.sum() == 0:
         log(f"WARNING: No data found for lu.from={lu_from} and Ts=2000")
