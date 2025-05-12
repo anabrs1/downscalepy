@@ -38,18 +38,59 @@ def load_argentina_data(*args, **kwargs) -> Dict[str, Any]:
     if 'use_real_data' in kwargs:
         use_real_data = kwargs['use_real_data']
     
+    RED = "\033[1;91m"
+    GREEN = "\033[1;92m"
+    YELLOW = "\033[1;93m"
+    BLUE = "\033[1;94m"
+    MAGENTA = "\033[1;95m"
+    CYAN = "\033[1;96m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    RESET = "\033[0m"
+    
+    # Create a debug log file in the current directory
+    debug_log = os.path.join(os.getcwd(), "downscalepy_debug.log")
+    
+    def super_debug(message, color=None):
+        if color:
+            formatted = f"{color}{message}{RESET}"
+        else:
+            formatted = message
+        
+        print(formatted, flush=True)
+        
+        import sys
+        sys.stderr.write(formatted + "\n")
+        sys.stderr.flush()
+        
+        with open(debug_log, "a") as f:
+            f.write(message + "\n")
+    
+    with open(debug_log, "w") as f:
+        f.write("DOWNSCALEPY SUPER EXTREME DEBUG LOG\n\n")
+    
     print(f"Loading Argentina data (use_real_data={use_real_data})...")
     
-    import sys
-    sys.stderr.write("\n\n")
-    sys.stderr.write("="*80 + "\n")
-    sys.stderr.write("DOWNSCALEPY EXTREME DEBUGGING ACTIVATED\n")
-    sys.stderr.write("="*80 + "\n")
-    sys.stderr.write(f"Current working directory: {os.getcwd()}\n")
-    sys.stderr.write(f"Script location: {os.path.abspath(__file__)}\n")
-    sys.stderr.write(f"Looking for data in: /storage/lopesas/downscalepy/downscalepy/data/converted\n")
-    sys.stderr.write("="*80 + "\n\n")
-    sys.stderr.flush()
+    super_debug("\n\n", BOLD)
+    super_debug("!"*100, RED + BOLD)
+    super_debug("!"*100, RED + BOLD)
+    super_debug("!!!!!!!!!!!!!!!!!!!!! DOWNSCALEPY SUPER EXTREME DEBUGGING ACTIVATED !!!!!!!!!!!!!!!!!!!!!", RED + BOLD)
+    super_debug("!"*100, RED + BOLD)
+    super_debug("!"*100, RED + BOLD)
+    super_debug(f"Debug log file: {debug_log}", YELLOW + BOLD)
+    super_debug(f"Current working directory: {os.getcwd()}", CYAN)
+    super_debug(f"Script location: {os.path.abspath(__file__)}", CYAN)
+    super_debug(f"Looking for data in: {RED + BOLD}/storage/lopesas/downscalepy/downscalepy/data/converted{RESET}", CYAN)
+    super_debug("!"*100, RED + BOLD)
+    super_debug("\n", BOLD)
+    
+    # Try to create a file in /tmp to verify we can write
+    try:
+        with open("/tmp/downscalepy_debug_test.txt", "w") as f:
+            f.write("Debug test file - if you see this, debug output is working\n")
+        super_debug(f"Created test file: /tmp/downscalepy_debug_test.txt", GREEN)
+    except Exception as e:
+        super_debug(f"Failed to create test file: {e}", RED)
     
     try:
         if use_real_data:
@@ -57,8 +98,8 @@ def load_argentina_data(*args, **kwargs) -> Dict[str, Any]:
         else:
             return generate_synthetic_argentina_data()
     except Exception as e:
-        print(f"Error loading Argentina data: {e}")
-        print("Falling back to synthetic data...")
+        super_debug(f"{RED + BOLD}Error loading Argentina data: {e}{RESET}", RED)
+        super_debug(f"{YELLOW}Falling back to synthetic data...{RESET}", YELLOW)
         return generate_synthetic_argentina_data()
 
 
