@@ -14,7 +14,7 @@ import tqdm
 
 def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None, 
            niter: int = 1000, nburn: int = 500, A0: float = 1e4,
-           calc_marginal_fx: bool = False) -> Dict[str, Any]:
+           calc_marginal_fx: bool = False, random_seed: Optional[int] = None) -> Dict[str, Any]:
     """
     MCMC estimation of a multinomial logit model following Polson et al. (2013).
 
@@ -35,6 +35,8 @@ def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None,
         Prior variance scalar for all slope coefficients
     calc_marginal_fx : bool, default=False
         Should marginal effects be calculated?
+    random_seed : int, optional
+        Random seed for reproducibility. If None, results will vary between runs.
 
     Returns
     -------
@@ -52,6 +54,9 @@ def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None,
     """
     n, k = X.shape
     p = Y.shape[1]
+    
+    if random_seed is not None:
+        np.random.seed(random_seed)
     
     if baseline is None:
         baseline = p - 1
@@ -81,6 +86,7 @@ def mnlogit(X: np.ndarray, Y: np.ndarray, baseline: Optional[int] = None,
         Approximate Polya-Gamma sampling.
         This is a simplified approximation - in production, use a proper PG sampler.
         """
+        # np.random.seed is already set at the beginning of mnlogit if random_seed was provided
         return np.random.gamma(1, 1, size=n) / (1 + np.exp(-c))
     
     pp = list(range(p))

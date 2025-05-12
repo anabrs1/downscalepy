@@ -11,7 +11,7 @@ from downscalepy import downscale, mnlogit, luc_plot, save_luc_plot
 from downscalepy.data.load_data import load_argentina_data
 
 
-def run_example(use_real_data=True, debug=True):
+def run_example(use_real_data=True, debug=True, random_seed=42):
     """
     Run the Argentina example.
     
@@ -25,12 +25,17 @@ def run_example(use_real_data=True, debug=True):
         If False, synthetic data will be generated.
     debug : bool, default=True
         Whether to print debug information.
+    random_seed : int, default=42
+        Random seed for reproducibility. Using the same seed ensures
+        consistent results across multiple runs.
         
     Returns
     -------
     dict
         The result of the downscaling process.
     """
+    np.random.seed(random_seed)
+    
     example_LU_from = "Cropland"
     
     print(f"Loading Argentina data (use_real_data={use_real_data})...")
@@ -106,7 +111,8 @@ def run_example(use_real_data=True, debug=True):
             Y=Y_data.values,
             baseline=baseline,
             niter=3,
-            nburn=2
+            nburn=2,
+            random_seed=random_seed
         )
         
         beta_mean = np.mean(res['postb'], axis=2)
@@ -128,9 +134,10 @@ def run_example(use_real_data=True, debug=True):
     
     if len(betas_df) == 0:
         print("No betas were generated from real data. Using synthetic data instead.")
-        return run_example(use_real_data=False, debug=debug)
+        return run_example(use_real_data=False, debug=debug, random_seed=random_seed)
     
     ns_list = argentina_df['lu_levels']['ns'].unique()
+    # np.random.seed is already set at the beginning of the function
     priors = pd.DataFrame({
         'ns': ns_list,
         'lu.from': example_LU_from,
@@ -282,4 +289,4 @@ def plot_results(result, start_areas, raster_path=None, output_dir=None, example
 
 
 if __name__ == "__main__":
-    run_example()
+    run_example(random_seed=42)
