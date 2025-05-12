@@ -70,69 +70,114 @@ def load_real_argentina_data() -> Dict[str, Any]:
     ]
     
     user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
-    print(f"First checking user's specific storage path: {user_storage_path}")
+    print(f"CHECKING PRIMARY DATA PATH: {user_storage_path}")
     
-    if os.path.exists(user_storage_path):
-        missing = [f for f in csv_files if not os.path.exists(os.path.join(user_storage_path, f))]
-        if not missing:
-            data_dir = user_storage_path
-            print(f"Found all data files in user's storage path: {data_dir}")
+    if not os.path.exists(user_storage_path):
+        print(f"ERROR: Primary data directory does not exist: {user_storage_path}")
+        print(f"Checking parent directory: {os.path.dirname(user_storage_path)}")
+        if os.path.exists(os.path.dirname(user_storage_path)):
+            print(f"Parent directory exists. Contents: {os.listdir(os.path.dirname(user_storage_path))}")
         else:
-            print(f"  - User's storage path exists but missing {len(missing)} files: {missing}")
-            all_files = os.listdir(user_storage_path) if os.path.exists(user_storage_path) else []
-            print(f"  - Available files in directory: {all_files}")
+            print(f"Parent directory does not exist")
     else:
-        print(f"  - User's storage path does not exist")
-    
-    if not os.path.exists(user_storage_path) or missing:
-        specific_path = 'downscalepy/data/converted'
+        print(f"SUCCESS: Primary data directory exists: {user_storage_path}")
+        print(f"Directory contents: {os.listdir(user_storage_path)}")
         
-        if os.path.isabs(specific_path) and os.path.exists(specific_path):
-            data_dir = specific_path
-            print(f"Using specified absolute path: {data_dir}")
-        else:
-            # Try relative to current directory
-            relative_path = os.path.join(os.getcwd(), specific_path)
-            if os.path.exists(relative_path):
-                data_dir = relative_path
-                print(f"Found data in relative path: {data_dir}")
+        all_files_exist = True
+        for csv_file in csv_files:
+            file_path = os.path.join(user_storage_path, csv_file)
+            if os.path.exists(file_path):
+                print(f"  ✓ Found file: {csv_file} (size: {os.path.getsize(file_path)} bytes)")
             else:
-                # Try from script directory
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                package_path = os.path.join(script_dir, 'converted')
-                if os.path.exists(package_path):
-                    data_dir = package_path
-                    print(f"Found data in package path: {data_dir}")
-                else:
-                    possible_dirs = [
-                        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
-                        os.path.join(os.getcwd(), 'data', 'converted'),
-                        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
-                        os.path.join(os.getcwd(), 'converted'),
-                        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
-                        os.path.join(script_dir, '..', '..', 'data', 'converted'),
-                    ]
-                    
-                    if 'DOWNSCALEPY_DATA_DIR' in os.environ:
-                        possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
-                    
-                    data_dir = None
-                    for directory in possible_dirs:
-                        print(f"Checking directory: {directory}")
-                        if os.path.exists(directory):
-                            missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
-                            if not missing:
-                                data_dir = directory
-                                print(f"Found all data files in: {data_dir}")
-                                break
-                            else:
-                                print(f"  - Missing {len(missing)} files: {missing}")
-                        else:
-                            print(f"  - Directory does not exist")
+                print(f"  ✗ Missing file: {csv_file}")
+                all_files_exist = False
+        
+        if all_files_exist:
+            print(f"SUCCESS: All required data files found in: {user_storage_path}")
+            data_dir = user_storage_path
+        else:
+            print(f"WARNING: Some files are missing from primary data path")
+            all_csv_files = [f for f in os.listdir(user_storage_path) if f.endswith('.csv')]
+            print(f"Available CSV files: {all_csv_files}")
+            
+            missing_files = []
+            for required_file in csv_files:
+                found = False
+                for available_file in all_csv_files:
+                    if required_file.lower() == available_file.lower():
+                        print(f"  ✓ Found case-insensitive match: {required_file} -> {available_file}")
+                        found = True
+                        break
+                if not found:
+                    missing_files.append(required_file)
+            
+            if not missing_files:
+                print(f"SUCCESS: All required files found with case-insensitive matching")
+                data_dir = user_storage_path
+            else:
+                print(f"ERROR: Still missing files after case-insensitive matching: {missing_files}")
     
-    if not data_dir:
-        print("Could not find data files in any of the searched directories.")
-        print("Please ensure data files are in 'downscalepy/data/converted' directory.")
+    if 'data_dir' not in locals():
+        print("Trying alternative data paths...")
+        
+        alternative_paths = [
+            '/storage/lopesas/downscalepy/data/converted',
+            '/storage/lopesas/downscalepy/converted',
+            '/storage/lopesas/downscalepy/downscalepy/data',
+            '/storage/lopesas/downscalepy'
+        ]
+        
+        for alt_path in alternative_paths:
+            print(f"Checking alternative path: {alt_path}")
+            if os.path.exists(alt_path):
+                print(f"  Directory exists. Contents: {os.listdir(alt_path)}")
+                csv_files_in_dir = [f for f in os.listdir(alt_path) if f.endswith('.csv')]
+                if csv_files_in_dir:
+                    print(f"  Found CSV files: {csv_files_in_dir}")
+                    missing = [f for f in csv_files if not os.path.exists(os.path.join(alt_path, f))]
+                    if not missing:
+                        data_dir = alt_path
+                        print(f"SUCCESS: Found all data files in alternative path: {data_dir}")
+                        break
+                    else:
+                        print(f"  Missing {len(missing)} files: {missing}")
+            else:
+                print(f"  Directory does not exist")
+        
+        if 'data_dir' not in locals():
+            specific_path = 'downscalepy/data/converted'
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            possible_dirs = [
+                os.path.join(os.getcwd(), specific_path),
+                os.path.join(script_dir, 'converted'),
+                os.path.join(os.getcwd(), 'data', 'converted'),
+                os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+                os.path.join(os.getcwd(), 'converted'),
+                os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+                os.path.join(script_dir, '..', '..', 'data', 'converted'),
+            ]
+            
+            if 'DOWNSCALEPY_DATA_DIR' in os.environ:
+                possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
+            
+            for directory in possible_dirs:
+                print(f"Checking standard path: {directory}")
+                if os.path.exists(directory):
+                    print(f"  Directory exists. Contents: {os.listdir(directory)}")
+                    missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
+                    if not missing:
+                        data_dir = directory
+                        print(f"SUCCESS: Found all data files in: {data_dir}")
+                        break
+                    else:
+                        print(f"  Missing {len(missing)} files: {missing}")
+                else:
+                    print(f"  Directory does not exist")
+    
+    if 'data_dir' not in locals():
+        print("ERROR: Could not find data files in any of the searched directories.")
+        print("Please ensure data files are in '/storage/lopesas/downscalepy/downscalepy/data/converted' directory.")
         print("Falling back to synthetic data.")
         return generate_synthetic_argentina_data()
     
@@ -199,45 +244,80 @@ def prepare_argentina_raster() -> Optional[str]:
     """
     user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
     raster_tif_path = os.path.join(user_storage_path, 'argentina_raster.tif')
-    print(f"First checking for raster in user's specific storage path: {raster_tif_path}")
+    print(f"CHECKING PRIMARY RASTER PATH: {raster_tif_path}")
     
     if os.path.exists(raster_tif_path):
-        print(f"Found raster file at user's storage path: {raster_tif_path}")
-        return raster_tif_path
+        print(f"SUCCESS: Found raster file at primary path: {raster_tif_path}")
+        try:
+            with rasterio.open(raster_tif_path) as src:
+                print(f"  ✓ Raster file is valid and readable")
+                print(f"  ✓ Raster dimensions: {src.width}x{src.height}")
+            return raster_tif_path
+        except Exception as e:
+            print(f"ERROR: Raster file exists but cannot be read: {e}")
     else:
-        print(f"  - Raster file not found at user's storage path")
+        print(f"ERROR: Raster file not found at primary path")
+        
         if os.path.exists(user_storage_path):
-            print(f"  - User's storage directory exists, but raster file is missing")
+            print(f"  - Directory exists, but raster file is missing")
             all_files = os.listdir(user_storage_path)
-            tif_files = [f for f in all_files if f.endswith('.tif')]
+            print(f"  - Directory contents: {all_files}")
+            
+            tif_files = [f for f in all_files if f.lower().endswith('.tif')]
+            if tif_files:
+                print(f"  - Available .tif files: {tif_files}")
+                
+                for tif_file in tif_files:
+                    if tif_file.lower() == 'argentina_raster.tif'.lower():
+                        alt_path = os.path.join(user_storage_path, tif_file)
+                        print(f"SUCCESS: Found case-insensitive match: {alt_path}")
+                        return alt_path
+            
+            raster_files = [f for f in all_files if 'raster' in f.lower()]
+            if raster_files:
+                print(f"  - Files with 'raster' in the name: {raster_files}")
+        else:
+            print(f"  - Directory does not exist: {user_storage_path}")
+            
+            parent_dir = os.path.dirname(user_storage_path)
+            if os.path.exists(parent_dir):
+                print(f"  - Parent directory exists: {parent_dir}")
+                print(f"  - Parent directory contents: {os.listdir(parent_dir)}")
+                
+                # Try to create the directory
+                try:
+                    os.makedirs(user_storage_path, exist_ok=True)
+                    print(f"  - Created missing directory: {user_storage_path}")
+                except Exception as e:
+                    print(f"  - Failed to create directory: {e}")
+            else:
+                print(f"  - Parent directory does not exist: {parent_dir}")
+    
+    alternative_paths = [
+        '/storage/lopesas/downscalepy/data/converted',
+        '/storage/lopesas/downscalepy/converted',
+        '/storage/lopesas/downscalepy/downscalepy/data',
+        '/storage/lopesas/downscalepy'
+    ]
+    
+    for alt_path in alternative_paths:
+        alt_raster_path = os.path.join(alt_path, 'argentina_raster.tif')
+        print(f"Checking alternative path: {alt_raster_path}")
+        if os.path.exists(alt_raster_path):
+            print(f"SUCCESS: Found raster file at alternative path: {alt_raster_path}")
+            return alt_raster_path
+        elif os.path.exists(alt_path):
+            print(f"  - Directory exists but no raster file")
+            tif_files = [f for f in os.listdir(alt_path) if f.lower().endswith('.tif')]
             if tif_files:
                 print(f"  - Available .tif files: {tif_files}")
     
     specific_path = 'downscalepy/data/converted'
-    
-    if os.path.isabs(specific_path):
-        raster_tif_path = os.path.join(specific_path, 'argentina_raster.tif')
-        if os.path.exists(raster_tif_path):
-            print(f"Found raster file at specific absolute path: {raster_tif_path}")
-            return raster_tif_path
-    
-    # Try relative to current directory
-    relative_path = os.path.join(os.getcwd(), specific_path)
-    raster_tif_path = os.path.join(relative_path, 'argentina_raster.tif')
-    if os.path.exists(raster_tif_path):
-        print(f"Found raster file at relative path: {raster_tif_path}")
-        return raster_tif_path
-    
-    # Try from script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    package_path = os.path.join(script_dir, 'converted')
-    raster_tif_path = os.path.join(package_path, 'argentina_raster.tif')
-    if os.path.exists(raster_tif_path):
-        print(f"Found raster file in package path: {raster_tif_path}")
-        return raster_tif_path
     
     possible_dirs = [
-        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
+        os.path.join(os.getcwd(), specific_path),
+        os.path.join(script_dir, 'converted'),
         os.path.join(os.getcwd(), 'data', 'converted'),
         os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
         os.path.join(os.getcwd(), 'converted'),
@@ -248,100 +328,93 @@ def prepare_argentina_raster() -> Optional[str]:
     if 'DOWNSCALEPY_DATA_DIR' in os.environ:
         possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
     
-    for converted_dir in possible_dirs:
-        print(f"Checking for raster in: {converted_dir}")
-        raster_tif_path = os.path.join(converted_dir, 'argentina_raster.tif')
-        if os.path.exists(raster_tif_path):
-            print(f"Found raster file at: {raster_tif_path}")
-            return raster_tif_path
+    for directory in possible_dirs:
+        raster_path = os.path.join(directory, 'argentina_raster.tif')
+        print(f"Checking standard path: {raster_path}")
+        if os.path.exists(raster_path):
+            print(f"SUCCESS: Found raster file at standard path: {raster_path}")
+            return raster_path
     
-    for converted_dir in possible_dirs:
-        original_dir = os.path.join(os.path.dirname(converted_dir), 'original')
+    print("Checking for GRD/GRI files to convert...")
+    downscalr_dirs = [
+        os.path.abspath(os.path.join(script_dir, '../../../downscalr')),  # Default location
+        os.path.abspath(os.path.join(os.getcwd(), '../downscalr')),  # Adjacent to working dir
+        os.path.abspath(os.path.join(os.path.expanduser('~'), 'repos', 'downscalr')),  # Home dir repos
+    ]
+    
+    for downscalr_dir in downscalr_dirs:
+        grd_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.grd')
+        gri_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.gri')
         
-        r_raster_path = os.path.join(original_dir, 'argentina_raster.RData')
-        if os.path.exists(r_raster_path):
-            print(f"Found R raster data at: {r_raster_path}")
-            print("R raster data conversion not implemented. Creating synthetic raster.")
-            return create_synthetic_raster()
-        
-        downscalr_dirs = [
-            os.path.abspath(os.path.join(script_dir, '../../../downscalr')),  # Default location
-            os.path.abspath(os.path.join(os.getcwd(), '../downscalr')),  # Adjacent to working dir
-            os.path.abspath(os.path.join(os.path.expanduser('~'), 'repos', 'downscalr')),  # Home dir repos
-        ]
-        
-        for downscalr_dir in downscalr_dirs:
-            grd_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.grd')
-            gri_path = os.path.join(downscalr_dir, 'inst/extdata/argentina_raster.gri')
+        if os.path.exists(grd_path) and os.path.exists(gri_path):
+            print(f"SUCCESS: Found GRD/GRI files at: {grd_path} and {gri_path}")
             
-            if os.path.exists(grd_path) and os.path.exists(gri_path):
-                print(f"Found GRD/GRI files at: {grd_path} and {gri_path}")
+            # Try to create the user's storage directory
+            try:
+                os.makedirs(user_storage_path, exist_ok=True)
+                os.makedirs(os.path.join(user_storage_path, 'raster'), exist_ok=True)
                 
-                os.makedirs(converted_dir, exist_ok=True)
-                os.makedirs(os.path.join(converted_dir, 'raster'), exist_ok=True)
+                converted_grd_path = os.path.join(user_storage_path, 'raster', 'argentina_raster.grd')
+                converted_gri_path = os.path.join(user_storage_path, 'raster', 'argentina_raster.gri')
+                raster_tif_path = os.path.join(user_storage_path, 'argentina_raster.tif')
                 
-                converted_grd_path = os.path.join(converted_dir, 'raster', 'argentina_raster.grd')
-                converted_gri_path = os.path.join(converted_dir, 'raster', 'argentina_raster.gri')
-                raster_tif_path = os.path.join(converted_dir, 'argentina_raster.tif')
+                # Copy GRD/GRI files to converted directory
+                shutil.copy(grd_path, converted_grd_path)
+                shutil.copy(gri_path, converted_gri_path)
                 
-                try:
-                    # Copy GRD/GRI files to converted directory
-                    shutil.copy(grd_path, converted_grd_path)
-                    shutil.copy(gri_path, converted_gri_path)
-                    
-                    import rasterio
-                    from rasterio.transform import from_origin
-                    
-                    with open(converted_grd_path, 'r') as f:
-                        lines = f.readlines()
-                    
-                    nrows = ncols = 0
-                    xmin = ymin = 0
-                    cellsize = 1
-                    
-                    for line in lines:
-                        if 'nrows' in line:
-                            nrows = int(line.split('=')[1].strip())
-                        elif 'ncols' in line:
-                            ncols = int(line.split('=')[1].strip())
-                        elif 'xmin' in line:
-                            xmin = float(line.split('=')[1].strip())
-                        elif 'ymin' in line:
-                            ymin = float(line.split('=')[1].strip())
-                        elif 'cellsize' in line:
-                            cellsize = float(line.split('=')[1].strip())
-                    
-                    with open(converted_gri_path, 'rb') as f:
-                        data = np.fromfile(f, dtype=np.float32)
-                    
-                    if len(data) >= nrows * ncols:
-                        data = data[:nrows * ncols].reshape((nrows, ncols))
-                    else:
-                        print(f"Warning: GRI data size ({len(data)}) doesn't match expected dimensions ({nrows}x{ncols})")
-                        data = np.random.rand(nrows, ncols).astype(np.float32)
-                    
-                    transform = from_origin(xmin, ymin + nrows * cellsize, cellsize, cellsize)
-                    
-                    with rasterio.open(
-                        raster_tif_path,
-                        'w',
-                        driver='GTiff',
-                        height=nrows,
-                        width=ncols,
-                        count=1,
-                        dtype=data.dtype,
-                        crs='+proj=latlong',
-                        transform=transform,
-                    ) as dst:
-                        dst.write(data, 1)
-                    
-                    print(f"Successfully converted GRD/GRI to GeoTIFF: {raster_tif_path}")
-                    return raster_tif_path
+                import rasterio
+                from rasterio.transform import from_origin
                 
-                except Exception as e:
-                    print(f"Error converting GRD/GRI to GeoTIFF: {e}")
+                with open(converted_grd_path, 'r') as f:
+                    lines = f.readlines()
+                
+                nrows = ncols = 0
+                xmin = ymin = 0
+                cellsize = 1
+                
+                for line in lines:
+                    if 'nrows' in line:
+                        nrows = int(line.split('=')[1].strip())
+                    elif 'ncols' in line:
+                        ncols = int(line.split('=')[1].strip())
+                    elif 'xmin' in line:
+                        xmin = float(line.split('=')[1].strip())
+                    elif 'ymin' in line:
+                        ymin = float(line.split('=')[1].strip())
+                    elif 'cellsize' in line:
+                        cellsize = float(line.split('=')[1].strip())
+                
+                with open(converted_gri_path, 'rb') as f:
+                    data = np.fromfile(f, dtype=np.float32)
+                
+                if len(data) >= nrows * ncols:
+                    data = data[:nrows * ncols].reshape((nrows, ncols))
+                else:
+                    print(f"WARNING: GRI data size ({len(data)}) doesn't match expected dimensions ({nrows}x{ncols})")
+                    data = np.random.rand(nrows, ncols).astype(np.float32)
+                
+                transform = from_origin(xmin, ymin + nrows * cellsize, cellsize, cellsize)
+                
+                with rasterio.open(
+                    raster_tif_path,
+                    'w',
+                    driver='GTiff',
+                    height=nrows,
+                    width=ncols,
+                    count=1,
+                    dtype=data.dtype,
+                    crs='+proj=latlong',
+                    transform=transform,
+                ) as dst:
+                    dst.write(data, 1)
+                
+                print(f"SUCCESS: Converted GRD/GRI to GeoTIFF: {raster_tif_path}")
+                return raster_tif_path
+            
+            except Exception as e:
+                print(f"ERROR: Failed to convert GRD/GRI to GeoTIFF: {e}")
     
-    print("No raster data found in any location. Creating synthetic raster.")
+    print("ERROR: No raster data found in any location. Creating synthetic raster.")
     return create_synthetic_raster()
 
 
@@ -360,78 +433,128 @@ def create_synthetic_raster() -> str:
     """
     user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
     synthetic_path = os.path.join(user_storage_path, 'argentina_raster_synthetic.tif')
-    print(f"First checking for synthetic raster in user's specific storage path: {synthetic_path}")
+    print(f"CHECKING PRIMARY SYNTHETIC RASTER PATH: {synthetic_path}")
     
     if os.path.exists(synthetic_path):
-        print(f"Using existing synthetic raster at user's storage path: {synthetic_path}")
-        return synthetic_path
-    else:
-        print(f"  - Synthetic raster not found at user's storage path")
-        if not os.path.exists(user_storage_path):
-            try:
-                os.makedirs(user_storage_path, exist_ok=True)
-                print(f"  - Created user's storage directory: {user_storage_path}")
-            except Exception as e:
-                print(f"  - Could not create user's storage directory: {e}")
-    
-    specific_path = 'downscalepy/data/converted'
-    
-    if os.path.isabs(specific_path):
-        synthetic_path = os.path.join(specific_path, 'argentina_raster_synthetic.tif')
-        if os.path.exists(synthetic_path):
-            print(f"Using existing synthetic raster at specific absolute path: {synthetic_path}")
+        print(f"SUCCESS: Found existing synthetic raster at primary path: {synthetic_path}")
+        try:
+            with rasterio.open(synthetic_path) as src:
+                print(f"  ✓ Synthetic raster file is valid and readable")
+                print(f"  ✓ Raster dimensions: {src.width}x{src.height}")
             return synthetic_path
+        except Exception as e:
+            print(f"ERROR: Synthetic raster file exists but cannot be read: {e}")
+    else:
+        print(f"INFO: Synthetic raster not found at primary path")
+        
+        if os.path.exists(user_storage_path):
+            print(f"  - Directory exists, attempting to create synthetic raster")
+            all_files = os.listdir(user_storage_path)
+            print(f"  - Directory contents: {all_files}")
+            
+            tif_files = [f for f in all_files if f.lower().endswith('.tif')]
+            if tif_files:
+                print(f"  - Available .tif files: {tif_files}")
+                
+                for tif_file in tif_files:
+                    if 'synthetic' in tif_file.lower() and 'raster' in tif_file.lower():
+                        alt_path = os.path.join(user_storage_path, tif_file)
+                        print(f"SUCCESS: Found case-insensitive synthetic raster match: {alt_path}")
+                        return alt_path
+        else:
+            print(f"  - Directory does not exist: {user_storage_path}")
+            
+            parent_dir = os.path.dirname(user_storage_path)
+            if os.path.exists(parent_dir):
+                print(f"  - Parent directory exists: {parent_dir}")
+                print(f"  - Parent directory contents: {os.listdir(parent_dir)}")
+                
+                # Try to create the directory
+                try:
+                    os.makedirs(user_storage_path, exist_ok=True)
+                    print(f"SUCCESS: Created missing directory: {user_storage_path}")
+                except Exception as e:
+                    print(f"ERROR: Failed to create directory: {e}")
+            else:
+                print(f"  - Parent directory does not exist: {parent_dir}")
+                
+                # Try to create the entire path
+                try:
+                    os.makedirs(user_storage_path, exist_ok=True)
+                    print(f"SUCCESS: Created entire directory path: {user_storage_path}")
+                except Exception as e:
+                    print(f"ERROR: Failed to create directory path: {e}")
     
-    # Try relative to current directory
-    relative_path = os.path.join(os.getcwd(), specific_path)
-    synthetic_path = os.path.join(relative_path, 'argentina_raster_synthetic.tif')
-    if os.path.exists(synthetic_path):
-        print(f"Using existing synthetic raster at relative path: {synthetic_path}")
-        return synthetic_path
-    
-    # Try from script directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    package_path = os.path.join(script_dir, 'converted')
-    synthetic_path = os.path.join(package_path, 'argentina_raster_synthetic.tif')
-    if os.path.exists(synthetic_path):
-        print(f"Using existing synthetic raster in package path: {synthetic_path}")
-        return synthetic_path
-    
-    possible_dirs = [
-        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
-        os.path.join(os.getcwd(), 'data', 'converted'),
-        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
-        os.path.join(os.getcwd(), 'converted'),
-        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
-        os.path.join(script_dir, '..', '..', 'data', 'converted'),
+    alternative_paths = [
+        '/storage/lopesas/downscalepy/data/converted',
+        '/storage/lopesas/downscalepy/converted',
+        '/storage/lopesas/downscalepy/downscalepy/data',
+        '/storage/lopesas/downscalepy'
     ]
     
-    if 'DOWNSCALEPY_DATA_DIR' in os.environ:
-        possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
+    for alt_path in alternative_paths:
+        alt_synthetic_path = os.path.join(alt_path, 'argentina_raster_synthetic.tif')
+        print(f"Checking alternative path: {alt_synthetic_path}")
+        if os.path.exists(alt_synthetic_path):
+            print(f"SUCCESS: Found synthetic raster at alternative path: {alt_synthetic_path}")
+            return alt_synthetic_path
+        elif os.path.exists(alt_path):
+            print(f"  - Directory exists but no synthetic raster file")
+            try:
+                # Try to create the synthetic raster in this directory
+                os.makedirs(alt_path, exist_ok=True)
+                break
+            except Exception as e:
+                print(f"  - Could not use directory: {e}")
     
-    for directory in possible_dirs:
-        print(f"Checking for synthetic raster in: {directory}")
-        synthetic_path = os.path.join(directory, 'argentina_raster_synthetic.tif')
-        if os.path.exists(synthetic_path):
-            print(f"Using existing synthetic raster at: {synthetic_path}")
-            return synthetic_path
-    
-    output_dir = None
-    for directory in possible_dirs:
-        try:
-            os.makedirs(directory, exist_ok=True)
-            output_dir = directory
-            break
-        except Exception as e:
-            print(f"Could not create directory {directory}: {e}")
-    
-    if output_dir is None:
-        # Fallback to current working directory
-        output_dir = os.getcwd()
-        os.makedirs(os.path.join(output_dir, 'data', 'converted'), exist_ok=True)
-        output_dir = os.path.join(output_dir, 'data', 'converted')
+    # Try to create the synthetic raster in the primary path
+    try:
+        os.makedirs(user_storage_path, exist_ok=True)
+        output_dir = user_storage_path
+        print(f"SUCCESS: Will create synthetic raster in primary path: {output_dir}")
+    except Exception as e:
+        print(f"ERROR: Could not create primary directory: {e}")
+        
+        specific_path = 'downscalepy/data/converted'
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        possible_dirs = [
+            os.path.join(os.getcwd(), specific_path),
+            os.path.join(script_dir, 'converted'),
+            os.path.join(os.getcwd(), 'data', 'converted'),
+            os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+            os.path.join(os.getcwd(), 'converted'),
+            os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+            os.path.join(script_dir, '..', '..', 'data', 'converted'),
+        ]
+        
+        if 'DOWNSCALEPY_DATA_DIR' in os.environ:
+            possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
+        
+        output_dir = None
+        for directory in possible_dirs:
+            print(f"Checking if directory is writable: {directory}")
+            try:
+                os.makedirs(directory, exist_ok=True)
+                output_dir = directory
+                print(f"SUCCESS: Will create synthetic raster in: {output_dir}")
+                break
+            except Exception as e:
+                print(f"  - Could not create directory: {e}")
+        
+        if output_dir is None:
+            # Fallback to current working directory
+            output_dir = os.getcwd()
+            try:
+                os.makedirs(os.path.join(output_dir, 'data', 'converted'), exist_ok=True)
+                output_dir = os.path.join(output_dir, 'data', 'converted')
+                print(f"SUCCESS: Will create synthetic raster in fallback directory: {output_dir}")
+            except Exception as e:
+                print(f"ERROR: Could not create fallback directory: {e}")
+                print(f"WARNING: Using current directory as last resort")
     
     raster_tif_path = os.path.join(output_dir, 'argentina_raster_synthetic.tif')
+    print(f"Creating synthetic raster at: {raster_tif_path}")
     
     height, width = 20, 20
     data = np.zeros((height, width), dtype=np.float32)
@@ -459,11 +582,11 @@ def create_synthetic_raster() -> str:
         ) as dst:
             dst.write(data, 1)
         
-        print(f"Created synthetic raster at {raster_tif_path}")
+        print(f"SUCCESS: Created synthetic raster at {raster_tif_path}")
         return raster_tif_path
     except Exception as e:
-        print(f"Error creating synthetic raster: {e}")
-        print("Creating in-memory raster path as last resort")
+        print(f"ERROR: Failed to create synthetic raster: {e}")
+        print(f"WARNING: Using in-memory raster path as last resort")
         return "memory://synthetic_raster.tif"
 
 
