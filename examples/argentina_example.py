@@ -79,9 +79,9 @@ def run_example(use_real_data=True, debug=True):
         if debug:
             print(f"Processing lu.from={lu_from}")
         
-        mask = (argentina_luc['lu.from'] == lu_from) & ((argentina_luc['Ts'] == '2000') | (argentina_luc['Ts'] == 2000))
+        mask = (argentina_luc['lu.from'] == lu_from) & (argentina_luc['Ts'] == 2000)
         if mask.sum() == 0:
-            print(f"No data for lu.from={lu_from}, Ts=2000. Skipping.")
+            print(f"WARNING: No data found for lu.from={lu_from} and Ts=2000")
             continue
             
         Y_data = argentina_luc[mask].pivot(index='ns', columns='lu.to', values='value')
