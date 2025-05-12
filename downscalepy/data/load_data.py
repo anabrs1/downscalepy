@@ -40,6 +40,17 @@ def load_argentina_data(*args, **kwargs) -> Dict[str, Any]:
     
     print(f"Loading Argentina data (use_real_data={use_real_data})...")
     
+    import sys
+    sys.stderr.write("\n\n")
+    sys.stderr.write("="*80 + "\n")
+    sys.stderr.write("DOWNSCALEPY EXTREME DEBUGGING ACTIVATED\n")
+    sys.stderr.write("="*80 + "\n")
+    sys.stderr.write(f"Current working directory: {os.getcwd()}\n")
+    sys.stderr.write(f"Script location: {os.path.abspath(__file__)}\n")
+    sys.stderr.write(f"Looking for data in: /storage/lopesas/downscalepy/downscalepy/data/converted\n")
+    sys.stderr.write("="*80 + "\n\n")
+    sys.stderr.flush()
+    
     try:
         if use_real_data:
             return load_real_argentina_data()
@@ -60,6 +71,8 @@ def load_real_argentina_data() -> Dict[str, Any]:
     Dict[str, Any]
         A dictionary containing the real Argentina data.
     """
+    import sys
+    
     csv_files = [
         'argentina_luc.csv',
         'argentina_FABLE.csv',
@@ -70,79 +83,104 @@ def load_real_argentina_data() -> Dict[str, Any]:
     ]
     
     user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
-    print(f"CHECKING PRIMARY DATA PATH: {user_storage_path}")
+    sys.stderr.write(f"EXTREME DEBUG: CHECKING PRIMARY DATA PATH: {user_storage_path}\n")
+    sys.stderr.flush()
+    
+    import sys
     
     if not os.path.exists(user_storage_path):
-        print(f"ERROR: Primary data directory does not exist: {user_storage_path}")
-        print(f"Checking parent directory: {os.path.dirname(user_storage_path)}")
+        sys.stderr.write(f"EXTREME DEBUG ERROR: Primary data directory does not exist: {user_storage_path}\n")
+        sys.stderr.write(f"EXTREME DEBUG: Checking parent directory: {os.path.dirname(user_storage_path)}\n")
         if os.path.exists(os.path.dirname(user_storage_path)):
-            print(f"Parent directory exists. Contents: {os.listdir(os.path.dirname(user_storage_path))}")
+            sys.stderr.write(f"EXTREME DEBUG: Parent directory exists. Contents: {os.listdir(os.path.dirname(user_storage_path))}\n")
         else:
-            print(f"Parent directory does not exist")
+            sys.stderr.write(f"EXTREME DEBUG: Parent directory does not exist\n")
     else:
-        print(f"SUCCESS: Primary data directory exists: {user_storage_path}")
-        print(f"Directory contents: {os.listdir(user_storage_path)}")
+        sys.stderr.write(f"EXTREME DEBUG SUCCESS: Primary data directory exists: {user_storage_path}\n")
+        sys.stderr.write(f"EXTREME DEBUG: Directory contents: {os.listdir(user_storage_path)}\n")
         
         all_files_exist = True
         for csv_file in csv_files:
             file_path = os.path.join(user_storage_path, csv_file)
             if os.path.exists(file_path):
-                print(f"  ✓ Found file: {csv_file} (size: {os.path.getsize(file_path)} bytes)")
+                sys.stderr.write(f"EXTREME DEBUG:   ✓ Found file: {csv_file} (size: {os.path.getsize(file_path)} bytes)\n")
             else:
-                print(f"  ✗ Missing file: {csv_file}")
+                sys.stderr.write(f"EXTREME DEBUG:   ✗ Missing file: {csv_file}\n")
                 all_files_exist = False
         
         if all_files_exist:
-            print(f"SUCCESS: All required data files found in: {user_storage_path}")
+            sys.stderr.write(f"EXTREME DEBUG SUCCESS: All required data files found in: {user_storage_path}\n")
             data_dir = user_storage_path
         else:
-            print(f"WARNING: Some files are missing from primary data path")
+            sys.stderr.write(f"EXTREME DEBUG WARNING: Some files are missing from primary data path\n")
             all_csv_files = [f for f in os.listdir(user_storage_path) if f.endswith('.csv')]
-            print(f"Available CSV files: {all_csv_files}")
+            sys.stderr.write(f"EXTREME DEBUG: Available CSV files: {all_csv_files}\n")
             
             missing_files = []
             for required_file in csv_files:
                 found = False
                 for available_file in all_csv_files:
                     if required_file.lower() == available_file.lower():
-                        print(f"  ✓ Found case-insensitive match: {required_file} -> {available_file}")
+                        sys.stderr.write(f"EXTREME DEBUG:   ✓ Found case-insensitive match: {required_file} -> {available_file}\n")
                         found = True
                         break
                 if not found:
                     missing_files.append(required_file)
             
             if not missing_files:
-                print(f"SUCCESS: All required files found with case-insensitive matching")
+                sys.stderr.write(f"EXTREME DEBUG SUCCESS: All required files found with case-insensitive matching\n")
                 data_dir = user_storage_path
             else:
-                print(f"ERROR: Still missing files after case-insensitive matching: {missing_files}")
+                sys.stderr.write(f"EXTREME DEBUG ERROR: Still missing files after case-insensitive matching: {missing_files}\n")
+        
+        sys.stderr.flush()
+    
+    import sys
     
     if 'data_dir' not in locals():
-        print("Trying alternative data paths...")
+        sys.stderr.write("EXTREME DEBUG: Trying alternative data paths...\n")
         
         alternative_paths = [
             '/storage/lopesas/downscalepy/data/converted',
             '/storage/lopesas/downscalepy/converted',
             '/storage/lopesas/downscalepy/downscalepy/data',
-            '/storage/lopesas/downscalepy'
+            '/storage/lopesas/downscalepy',
+            '/storage/lopesas/downscalepy/downscalepy',
+            '/storage/lopesas/downscalepy/data',
+            '/storage/lopesas'
         ]
         
         for alt_path in alternative_paths:
-            print(f"Checking alternative path: {alt_path}")
+            sys.stderr.write(f"EXTREME DEBUG: Checking alternative path: {alt_path}\n")
             if os.path.exists(alt_path):
-                print(f"  Directory exists. Contents: {os.listdir(alt_path)}")
+                sys.stderr.write(f"EXTREME DEBUG:   Directory exists. Contents: {os.listdir(alt_path)}\n")
                 csv_files_in_dir = [f for f in os.listdir(alt_path) if f.endswith('.csv')]
                 if csv_files_in_dir:
-                    print(f"  Found CSV files: {csv_files_in_dir}")
+                    sys.stderr.write(f"EXTREME DEBUG:   Found CSV files: {csv_files_in_dir}\n")
                     missing = [f for f in csv_files if not os.path.exists(os.path.join(alt_path, f))]
                     if not missing:
                         data_dir = alt_path
-                        print(f"SUCCESS: Found all data files in alternative path: {data_dir}")
+                        sys.stderr.write(f"EXTREME DEBUG SUCCESS: Found all data files in alternative path: {data_dir}\n")
+                        
+                        # Try to copy files to the correct location
+                        try:
+                            os.makedirs(user_storage_path, exist_ok=True)
+                            for csv_file in csv_files:
+                                src = os.path.join(alt_path, csv_file)
+                                dst = os.path.join(user_storage_path, csv_file)
+                                if not os.path.exists(dst):
+                                    shutil.copy(src, dst)
+                            sys.stderr.write(f"EXTREME DEBUG SUCCESS: Copied CSV files to correct location\n")
+                        except Exception as e:
+                            sys.stderr.write(f"EXTREME DEBUG ERROR: Could not copy files: {e}\n")
+                        
                         break
                     else:
-                        print(f"  Missing {len(missing)} files: {missing}")
+                        sys.stderr.write(f"EXTREME DEBUG:   Missing {len(missing)} files: {missing}\n")
             else:
-                print(f"  Directory does not exist")
+                sys.stderr.write(f"EXTREME DEBUG:   Directory does not exist\n")
+        
+        sys.stderr.flush()
         
         if 'data_dir' not in locals():
             specific_path = 'downscalepy/data/converted'
@@ -175,10 +213,29 @@ def load_real_argentina_data() -> Dict[str, Any]:
                 else:
                     print(f"  Directory does not exist")
     
+    import sys
+    
     if 'data_dir' not in locals():
-        print("ERROR: Could not find data files in any of the searched directories.")
-        print("Please ensure data files are in '/storage/lopesas/downscalepy/downscalepy/data/converted' directory.")
-        print("Falling back to synthetic data.")
+        sys.stderr.write("EXTREME DEBUG: Searching for CSV files in any subdirectory of /storage/lopesas/downscalepy...\n")
+        if os.path.exists('/storage/lopesas/downscalepy'):
+            for root, dirs, files in os.walk('/storage/lopesas/downscalepy'):
+                csv_files_found = [f for f in files if f.endswith('.csv')]
+                if csv_files_found:
+                    sys.stderr.write(f"EXTREME DEBUG: Found CSV files in {root}: {csv_files_found}\n")
+                    
+                    for required_file in csv_files:
+                        for found_file in csv_files_found:
+                            if required_file.lower() == found_file.lower():
+                                sys.stderr.write(f"EXTREME DEBUG: Found required file {required_file} at {os.path.join(root, found_file)}\n")
+        
+        sys.stderr.write("\n" + "!"*80 + "\n")
+        sys.stderr.write("EXTREME DEBUG ERROR: Could not find data files in any of the searched directories.\n")
+        sys.stderr.write(f"EXTREME DEBUG ERROR: Missing data files: {csv_files}\n")
+        sys.stderr.write("EXTREME DEBUG ERROR: Please ensure data files are in '/storage/lopesas/downscalepy/downscalepy/data/converted' directory.\n")
+        sys.stderr.write("EXTREME DEBUG ERROR: Falling back to synthetic data.\n")
+        sys.stderr.write("!"*80 + "\n\n")
+        sys.stderr.flush()
+        
         return generate_synthetic_argentina_data()
     
     original_dir = os.path.join(os.path.dirname(data_dir), 'original')
