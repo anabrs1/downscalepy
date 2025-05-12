@@ -60,60 +60,75 @@ def load_real_argentina_data() -> Dict[str, Any]:
     Dict[str, Any]
         A dictionary containing the real Argentina data.
     """
-    specific_path = 'downscalepy/data/converted'
+    csv_files = [
+        'argentina_luc.csv',
+        'argentina_FABLE.csv',
+        'argentina_df_xmat.csv',
+        'argentina_df_lu_levels.csv',
+        'argentina_df_restrictions.csv',
+        'argentina_df_pop_data.csv'
+    ]
     
-    if os.path.isabs(specific_path) and os.path.exists(specific_path):
-        data_dir = specific_path
-        print(f"Using specified absolute path: {data_dir}")
-    else:
-        # Try relative to current directory
-        relative_path = os.path.join(os.getcwd(), specific_path)
-        if os.path.exists(relative_path):
-            data_dir = relative_path
-            print(f"Found data in relative path: {data_dir}")
+    user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
+    print(f"First checking user's specific storage path: {user_storage_path}")
+    
+    if os.path.exists(user_storage_path):
+        missing = [f for f in csv_files if not os.path.exists(os.path.join(user_storage_path, f))]
+        if not missing:
+            data_dir = user_storage_path
+            print(f"Found all data files in user's storage path: {data_dir}")
         else:
-            # Try from script directory
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            package_path = os.path.join(script_dir, 'converted')
-            if os.path.exists(package_path):
-                data_dir = package_path
-                print(f"Found data in package path: {data_dir}")
+            print(f"  - User's storage path exists but missing {len(missing)} files: {missing}")
+            all_files = os.listdir(user_storage_path) if os.path.exists(user_storage_path) else []
+            print(f"  - Available files in directory: {all_files}")
+    else:
+        print(f"  - User's storage path does not exist")
+    
+    if not os.path.exists(user_storage_path) or missing:
+        specific_path = 'downscalepy/data/converted'
+        
+        if os.path.isabs(specific_path) and os.path.exists(specific_path):
+            data_dir = specific_path
+            print(f"Using specified absolute path: {data_dir}")
+        else:
+            # Try relative to current directory
+            relative_path = os.path.join(os.getcwd(), specific_path)
+            if os.path.exists(relative_path):
+                data_dir = relative_path
+                print(f"Found data in relative path: {data_dir}")
             else:
-                possible_dirs = [
-                    os.path.join(os.getcwd(), 'data', 'converted'),
-                    os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
-                    os.path.join(os.getcwd(), 'converted'),
-                    os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
-                    os.path.join(script_dir, '..', '..', 'data', 'converted'),
-                    '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
-                    '/storage/lopesas/downscalepy/data/converted',
-                ]
-                
-                if 'DOWNSCALEPY_DATA_DIR' in os.environ:
-                    possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
-                
-                csv_files = [
-                    'argentina_luc.csv',
-                    'argentina_FABLE.csv',
-                    'argentina_df_xmat.csv',
-                    'argentina_df_lu_levels.csv',
-                    'argentina_df_restrictions.csv',
-                    'argentina_df_pop_data.csv'
-                ]
-                
-                data_dir = None
-                for directory in possible_dirs:
-                    print(f"Checking directory: {directory}")
-                    if os.path.exists(directory):
-                        missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
-                        if not missing:
-                            data_dir = directory
-                            print(f"Found all data files in: {data_dir}")
-                            break
+                # Try from script directory
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                package_path = os.path.join(script_dir, 'converted')
+                if os.path.exists(package_path):
+                    data_dir = package_path
+                    print(f"Found data in package path: {data_dir}")
+                else:
+                    possible_dirs = [
+                        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
+                        os.path.join(os.getcwd(), 'data', 'converted'),
+                        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+                        os.path.join(os.getcwd(), 'converted'),
+                        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+                        os.path.join(script_dir, '..', '..', 'data', 'converted'),
+                    ]
+                    
+                    if 'DOWNSCALEPY_DATA_DIR' in os.environ:
+                        possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
+                    
+                    data_dir = None
+                    for directory in possible_dirs:
+                        print(f"Checking directory: {directory}")
+                        if os.path.exists(directory):
+                            missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
+                            if not missing:
+                                data_dir = directory
+                                print(f"Found all data files in: {data_dir}")
+                                break
+                            else:
+                                print(f"  - Missing {len(missing)} files: {missing}")
                         else:
-                            print(f"  - Missing {len(missing)} files: {missing}")
-                    else:
-                        print(f"  - Directory does not exist")
+                            print(f"  - Directory does not exist")
     
     if not data_dir:
         print("Could not find data files in any of the searched directories.")
@@ -182,6 +197,22 @@ def prepare_argentina_raster() -> Optional[str]:
     Optional[str]
         Path to the raster file, or None if the raster data could not be prepared.
     """
+    user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
+    raster_tif_path = os.path.join(user_storage_path, 'argentina_raster.tif')
+    print(f"First checking for raster in user's specific storage path: {raster_tif_path}")
+    
+    if os.path.exists(raster_tif_path):
+        print(f"Found raster file at user's storage path: {raster_tif_path}")
+        return raster_tif_path
+    else:
+        print(f"  - Raster file not found at user's storage path")
+        if os.path.exists(user_storage_path):
+            print(f"  - User's storage directory exists, but raster file is missing")
+            all_files = os.listdir(user_storage_path)
+            tif_files = [f for f in all_files if f.endswith('.tif')]
+            if tif_files:
+                print(f"  - Available .tif files: {tif_files}")
+    
     specific_path = 'downscalepy/data/converted'
     
     if os.path.isabs(specific_path):
@@ -206,13 +237,12 @@ def prepare_argentina_raster() -> Optional[str]:
         return raster_tif_path
     
     possible_dirs = [
+        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
         os.path.join(os.getcwd(), 'data', 'converted'),
         os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
         os.path.join(os.getcwd(), 'converted'),
         os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
         os.path.join(script_dir, '..', '..', 'data', 'converted'),
-        '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
-        '/storage/lopesas/downscalepy/data/converted',
     ]
     
     if 'DOWNSCALEPY_DATA_DIR' in os.environ:
@@ -328,6 +358,22 @@ def create_synthetic_raster() -> str:
     str
         Path to the synthetic raster file.
     """
+    user_storage_path = '/storage/lopesas/downscalepy/downscalepy/data/converted'
+    synthetic_path = os.path.join(user_storage_path, 'argentina_raster_synthetic.tif')
+    print(f"First checking for synthetic raster in user's specific storage path: {synthetic_path}")
+    
+    if os.path.exists(synthetic_path):
+        print(f"Using existing synthetic raster at user's storage path: {synthetic_path}")
+        return synthetic_path
+    else:
+        print(f"  - Synthetic raster not found at user's storage path")
+        if not os.path.exists(user_storage_path):
+            try:
+                os.makedirs(user_storage_path, exist_ok=True)
+                print(f"  - Created user's storage directory: {user_storage_path}")
+            except Exception as e:
+                print(f"  - Could not create user's storage directory: {e}")
+    
     specific_path = 'downscalepy/data/converted'
     
     if os.path.isabs(specific_path):
@@ -352,13 +398,12 @@ def create_synthetic_raster() -> str:
         return synthetic_path
     
     possible_dirs = [
+        '/storage/lopesas/downscalepy/data/converted',  # Alternative user path
         os.path.join(os.getcwd(), 'data', 'converted'),
         os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
         os.path.join(os.getcwd(), 'converted'),
         os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
         os.path.join(script_dir, '..', '..', 'data', 'converted'),
-        '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
-        '/storage/lopesas/downscalepy/data/converted',
     ]
     
     if 'DOWNSCALEPY_DATA_DIR' in os.environ:
