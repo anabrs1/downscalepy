@@ -58,7 +58,8 @@ def load_argentina_data():
                 log(f"Error listing files in {path}: {str(e)}")
                 continue
                 
-            if os.path.exists(os.path.join(path, "argentina_luc.csv")):
+            if (os.path.exists(os.path.join(path, "argentina_luc.csv")) or 
+                os.path.exists(os.path.join(path, "argentina_df_luc.csv"))):
                 data_path = path
                 log(f"Found CSV data at: {data_path}")
                 break
@@ -73,17 +74,21 @@ def load_argentina_data():
         return generate_synthetic_data()
     
     try:
-        log(f"Loading argentina_luc.csv from {data_path}")
-        argentina_luc = pd.read_csv(os.path.join(data_path, "argentina_luc.csv"))
+        luc_file = "argentina_df_luc.csv" if os.path.exists(os.path.join(data_path, "argentina_df_luc.csv")) else "argentina_luc.csv"
+        log(f"Loading {luc_file} from {data_path}")
+        argentina_luc = pd.read_csv(os.path.join(data_path, luc_file))
         
-        log(f"Loading argentina_xmat.csv from {data_path}")
-        xmat = pd.read_csv(os.path.join(data_path, "argentina_xmat.csv"))
+        xmat_file = "argentina_df_xmat.csv" if os.path.exists(os.path.join(data_path, "argentina_df_xmat.csv")) else "argentina_xmat.csv"
+        log(f"Loading {xmat_file} from {data_path}")
+        xmat = pd.read_csv(os.path.join(data_path, xmat_file))
         
-        log(f"Loading argentina_lu_levels.csv from {data_path}")
-        lu_levels = pd.read_csv(os.path.join(data_path, "argentina_lu_levels.csv"))
+        lu_levels_file = "argentina_df_lu_levels.csv" if os.path.exists(os.path.join(data_path, "argentina_df_lu_levels.csv")) else "argentina_lu_levels.csv"
+        log(f"Loading {lu_levels_file} from {data_path}")
+        lu_levels = pd.read_csv(os.path.join(data_path, lu_levels_file))
         
-        log(f"Loading argentina_FABLE.csv from {data_path}")
-        fable = pd.read_csv(os.path.join(data_path, "argentina_FABLE.csv"))
+        fable_file = "argentina_df_FABLE.csv" if os.path.exists(os.path.join(data_path, "argentina_df_FABLE.csv")) else "argentina_FABLE.csv"
+        log(f"Loading {fable_file} from {data_path}")
+        fable = pd.read_csv(os.path.join(data_path, fable_file))
         
         data = {
             'argentina_luc': argentina_luc,
