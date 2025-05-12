@@ -60,41 +60,64 @@ def load_real_argentina_data() -> Dict[str, Any]:
     Dict[str, Any]
         A dictionary containing the real Argentina data.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    possible_dirs = [
-        os.path.join(script_dir, 'converted'),  # Default location in package
-        os.path.join(script_dir, '..', '..', 'data', 'converted'),  # Alternative package location
-        os.path.join(os.getcwd(), 'data', 'converted'),  # User's working dir + data/converted
-        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),  # User's working dir + downscalepy/data/converted
-        os.path.join(os.getcwd(), 'converted'),  # User's working dir + converted
-        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),  # Home dir repos
-    ]
+    specific_path = 'downscalepy/data/converted'
     
-    if 'DOWNSCALEPY_DATA_DIR' in os.environ:
-        possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
-    
-    csv_files = [
-        'argentina_luc.csv',
-        'argentina_FABLE.csv',
-        'argentina_df_xmat.csv',
-        'argentina_df_lu_levels.csv',
-        'argentina_df_restrictions.csv',
-        'argentina_df_pop_data.csv'
-    ]
-    
-    data_dir = None
-    for directory in possible_dirs:
-        missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
-        if not missing:
-            data_dir = directory
-            print(f"Found data files in: {data_dir}")
-            break
+    if os.path.isabs(specific_path) and os.path.exists(specific_path):
+        data_dir = specific_path
+        print(f"Using specified absolute path: {data_dir}")
+    else:
+        # Try relative to current directory
+        relative_path = os.path.join(os.getcwd(), specific_path)
+        if os.path.exists(relative_path):
+            data_dir = relative_path
+            print(f"Found data in relative path: {data_dir}")
         else:
-            print(f"Checked {directory}: missing {len(missing)} files")
+            # Try from script directory
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            package_path = os.path.join(script_dir, 'converted')
+            if os.path.exists(package_path):
+                data_dir = package_path
+                print(f"Found data in package path: {data_dir}")
+            else:
+                possible_dirs = [
+                    os.path.join(os.getcwd(), 'data', 'converted'),
+                    os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+                    os.path.join(os.getcwd(), 'converted'),
+                    os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+                    os.path.join(script_dir, '..', '..', 'data', 'converted'),
+                    '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
+                    '/storage/lopesas/downscalepy/data/converted',
+                ]
+                
+                if 'DOWNSCALEPY_DATA_DIR' in os.environ:
+                    possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
+                
+                csv_files = [
+                    'argentina_luc.csv',
+                    'argentina_FABLE.csv',
+                    'argentina_df_xmat.csv',
+                    'argentina_df_lu_levels.csv',
+                    'argentina_df_restrictions.csv',
+                    'argentina_df_pop_data.csv'
+                ]
+                
+                data_dir = None
+                for directory in possible_dirs:
+                    print(f"Checking directory: {directory}")
+                    if os.path.exists(directory):
+                        missing = [f for f in csv_files if not os.path.exists(os.path.join(directory, f))]
+                        if not missing:
+                            data_dir = directory
+                            print(f"Found all data files in: {data_dir}")
+                            break
+                        else:
+                            print(f"  - Missing {len(missing)} files: {missing}")
+                    else:
+                        print(f"  - Directory does not exist")
     
     if not data_dir:
-        print(f"Could not find data files in any of the searched directories.")
-        print("To specify a custom data directory, set the DOWNSCALEPY_DATA_DIR environment variable.")
+        print("Could not find data files in any of the searched directories.")
+        print("Please ensure data files are in 'downscalepy/data/converted' directory.")
         print("Falling back to synthetic data.")
         return generate_synthetic_argentina_data()
     
@@ -159,20 +182,44 @@ def prepare_argentina_raster() -> Optional[str]:
     Optional[str]
         Path to the raster file, or None if the raster data could not be prepared.
     """
+    specific_path = 'downscalepy/data/converted'
+    
+    if os.path.isabs(specific_path):
+        raster_tif_path = os.path.join(specific_path, 'argentina_raster.tif')
+        if os.path.exists(raster_tif_path):
+            print(f"Found raster file at specific absolute path: {raster_tif_path}")
+            return raster_tif_path
+    
+    # Try relative to current directory
+    relative_path = os.path.join(os.getcwd(), specific_path)
+    raster_tif_path = os.path.join(relative_path, 'argentina_raster.tif')
+    if os.path.exists(raster_tif_path):
+        print(f"Found raster file at relative path: {raster_tif_path}")
+        return raster_tif_path
+    
+    # Try from script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    package_path = os.path.join(script_dir, 'converted')
+    raster_tif_path = os.path.join(package_path, 'argentina_raster.tif')
+    if os.path.exists(raster_tif_path):
+        print(f"Found raster file in package path: {raster_tif_path}")
+        return raster_tif_path
+    
     possible_dirs = [
-        os.path.join(script_dir, 'converted'),  # Default location in package
-        os.path.join(script_dir, '..', '..', 'data', 'converted'),  # Alternative package location
-        os.path.join(os.getcwd(), 'data', 'converted'),  # User's working dir + data/converted
-        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),  # User's working dir + downscalepy/data/converted
-        os.path.join(os.getcwd(), 'converted'),  # User's working dir + converted
-        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),  # Home dir repos
+        os.path.join(os.getcwd(), 'data', 'converted'),
+        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+        os.path.join(os.getcwd(), 'converted'),
+        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+        os.path.join(script_dir, '..', '..', 'data', 'converted'),
+        '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
+        '/storage/lopesas/downscalepy/data/converted',
     ]
     
     if 'DOWNSCALEPY_DATA_DIR' in os.environ:
         possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
     
     for converted_dir in possible_dirs:
+        print(f"Checking for raster in: {converted_dir}")
         raster_tif_path = os.path.join(converted_dir, 'argentina_raster.tif')
         if os.path.exists(raster_tif_path):
             print(f"Found raster file at: {raster_tif_path}")
@@ -281,19 +328,44 @@ def create_synthetic_raster() -> str:
     str
         Path to the synthetic raster file.
     """
+    specific_path = 'downscalepy/data/converted'
+    
+    if os.path.isabs(specific_path):
+        synthetic_path = os.path.join(specific_path, 'argentina_raster_synthetic.tif')
+        if os.path.exists(synthetic_path):
+            print(f"Using existing synthetic raster at specific absolute path: {synthetic_path}")
+            return synthetic_path
+    
+    # Try relative to current directory
+    relative_path = os.path.join(os.getcwd(), specific_path)
+    synthetic_path = os.path.join(relative_path, 'argentina_raster_synthetic.tif')
+    if os.path.exists(synthetic_path):
+        print(f"Using existing synthetic raster at relative path: {synthetic_path}")
+        return synthetic_path
+    
+    # Try from script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    package_path = os.path.join(script_dir, 'converted')
+    synthetic_path = os.path.join(package_path, 'argentina_raster_synthetic.tif')
+    if os.path.exists(synthetic_path):
+        print(f"Using existing synthetic raster in package path: {synthetic_path}")
+        return synthetic_path
+    
     possible_dirs = [
-        os.path.join(script_dir, 'converted'),  # Default location in package
-        os.path.join(os.getcwd(), 'data', 'converted'),  # User's working dir + data/converted
-        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),  # User's working dir + downscalepy/data/converted
-        os.path.join(os.getcwd(), 'converted'),  # User's working dir + converted
-        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),  # Home dir repos
+        os.path.join(os.getcwd(), 'data', 'converted'),
+        os.path.join(os.getcwd(), 'downscalepy', 'data', 'converted'),
+        os.path.join(os.getcwd(), 'converted'),
+        os.path.join(os.path.expanduser('~'), 'repos', 'downscalepy', 'downscalepy', 'data', 'converted'),
+        os.path.join(script_dir, '..', '..', 'data', 'converted'),
+        '/storage/lopesas/downscalepy/downscalepy/data/converted',  # User's specific path
+        '/storage/lopesas/downscalepy/data/converted',
     ]
     
     if 'DOWNSCALEPY_DATA_DIR' in os.environ:
         possible_dirs.insert(0, os.environ['DOWNSCALEPY_DATA_DIR'])
     
     for directory in possible_dirs:
+        print(f"Checking for synthetic raster in: {directory}")
         synthetic_path = os.path.join(directory, 'argentina_raster_synthetic.tif')
         if os.path.exists(synthetic_path):
             print(f"Using existing synthetic raster at: {synthetic_path}")
