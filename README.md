@@ -1,6 +1,6 @@
 # Bias Correction Solver for Land Use Modeling
 
-A comprehensive Python implementation of the Multinomial Logit (MNL) bias correction solver for downscaling land use projections. This module replicates the reference R implementation from [downscalrhttps://tkrisztin.github.io/downscalr/) with additional enhancements for robustness and production use.
+downscalepy is a Python re-implementation inspired by the original DownscaleR package (R).A comprehensive Python implementation of the Multinomial Logit (MNL) bias correction solver for downscaling land use projections. This module replicates the reference R implementation from [downscalrhttps://tkrisztin.github.io/downscalr/) with additional enhancements for robustness and production use.
 
 ## Features
 
@@ -412,12 +412,43 @@ The bias correction solver is based on the multinomial logit model commonly used
 ## License
 
 This module is part of the 100m Land Use Management (LUM) Prediction System.
+The reuse policy of the European Commission documents is implemented by the Commission Decision 2011/833/EU of 12 December 2011 on the reuse of Commission documents (OJ L 330, 14.12.2011, p. 39). Unless otherwise noted, the reuse of this document is authorised 
+under the Creative Commons Attribution 4.0 International (CC BY 4.0) licence (https://creativecommons.org/licenses/by/4.0/). This means that reuse is allowed provided appropriate credit is given and any changes are indicated.
 
 ## Author
 
-Auto-generated implementation based on reference R solver.
-Contact: [Project Team]
+Auto-generated implementation based on reference R solver. Original methodology: DownscaleR (R) downscalr https://tkrisztin.github.io/downscalr/)
 
----
+Author: Ana Luisa BARBOSA
+Joint Research Centre
+Directorate D – Sustainable Resources
+JRC.D.4 Economics of Food System
 
-**Note**: This is a production-ready implementation designed for robustness and scalability. For research use, please cite the original downscalepy reference.
+Python implementation inspired by the DownscaleR R package.
+
+
+**Citation**: 
+cff-version: 1.2.0
+title: downscalepy
+message: >
+  If you use this software, please cite it using the metadata below.
+type: software
+version: 0.1.0
+authors:
+  - family-names: Barbosa
+    given-names: Ana Luísa
+    affiliation: Joint Research Centre, Directorate D – Sustainable Resources, JRC.D.4 Economics of Food System
+    email: ana-luisa.barbosa@ec.europa.eu
+repository-code: https://github.com/anabrs1/downscalepy
+license: CC BY 4.0
+date-released: 2026-01-21
+abstract: >
+  downscalepy is a Python re-implementation of statistical downscaling and
+  bias correction methodologies inspired by the DownscaleR R package created by Krisztin et al. https://tkrisztin.github.io/downscalr/.
+  The Python implementation was independently designed and developed, including software architecture, algorithms, and extensions.
+references:
+  - type: software
+    title: DownscaleR
+    notes: >
+      Original R package providing the conceptual and methodological
+      foundation for statistical downscaling and bias correction.
